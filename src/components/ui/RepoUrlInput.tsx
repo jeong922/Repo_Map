@@ -11,8 +11,15 @@ export const RepoUrlInput = () => {
             placeholder='https://github.com/username/repo'
             className='w-full p-4 bg-transparent outline-none text-text-main placeholder:text-text-muted/50 text-sm'
           />
-          <button className='cursor-pointer group/btn flex items-center justify-center px-5 h-14 bg-brand hover:bg-brand-hover transition-colors text-background'>
-            <ArrowRight size={20} className='group-hover/btn:translate-x-1 transition-transform duration-200' />
+          <button
+            aria-label='Analyze repository'
+            className='cursor-pointer group/btn flex items-center justify-center px-5 h-14 bg-brand hover:bg-brand-hover transition-colors text-background'
+          >
+            <ArrowRight
+              aria-hidden='true'
+              size={20}
+              className='group-hover/btn:translate-x-1 transition-transform duration-200'
+            />
           </button>
         </form>
         <div className='absolute -inset-px bg-linear-to-r from-brand/20 to-transparent rounded-2xl -z-10 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500' />
