@@ -1,17 +1,42 @@
+'use client';
+
+import { ChangeEvent, SubmitEvent, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 
 export const RepoUrlInput = () => {
+  const [url, setUrl] = useState('');
+
+  const handleUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setUrl(e.target.value);
+  };
+
+  const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!url.trim()) {
+      return;
+    }
+
+    console.log('URL:', url);
+  };
+
   return (
     <div className='flex flex-col items-center w-full max-w-2xl gap-6'>
       <p className='text-text-muted font-medium tracking-tight'>분석을 원하는 GitHub 링크를 입력해 주세요.</p>
       <div className='relative w-full group'>
-        <form className='relative flex items-center bg-surface/50 backdrop-blur-xl rounded-2xl overflow-hidden border border-border-subtle shadow-2xl focus-within:border-brand/50 transition-all duration-300'>
+        <form
+          onSubmit={handleSubmit}
+          className='relative flex items-center bg-surface/50 backdrop-blur-xl rounded-2xl overflow-hidden border border-border-subtle shadow-2xl focus-within:border-brand/50 transition-all duration-300'
+        >
           <input
             type='text'
+            value={url}
+            onChange={handleUrlChange}
             placeholder='https://github.com/username/repo'
             className='w-full p-4 bg-transparent outline-none text-text-main placeholder:text-text-muted/50 text-sm'
           />
           <button
+            type='submit'
             aria-label='Analyze repository'
             className='cursor-pointer group/btn flex items-center justify-center px-5 h-14 bg-brand hover:bg-brand-hover transition-colors text-background'
           >
