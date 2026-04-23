@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       fileContentCount: data.fileContents.length,
       tree: data.tree,
       // 임시로 일부만 가져오기
-      sample: data.fileContents.filter((f) => f.path.includes('src/')).slice(0, 3),
+      sourceContext: data.fileContents.filter((f) => f.path.includes('src/')).slice(0, 3),
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';

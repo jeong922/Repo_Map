@@ -3,7 +3,11 @@
 import { ChangeEvent, SubmitEvent, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 
-export const RepoUrlInput = () => {
+interface Props {
+  onSearch: (url: string) => void;
+}
+
+export const RepoUrlInput = ({ onSearch }: Props) => {
   const [url, setUrl] = useState('');
 
   const handleUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -12,12 +16,11 @@ export const RepoUrlInput = () => {
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     if (!url.trim()) {
       return;
     }
 
-    console.log('URL:', url);
+    onSearch(url);
   };
 
   return (

@@ -1,8 +1,8 @@
+import './globals.css';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import './globals.css';
-import { ThemeProvider } from 'next-themes';
 import { NavBar } from '@/components/ui/NavBar';
+import Providers from '@/components/ui/Providers';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -31,10 +31,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className='h-full flex flex-col'>
-        <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
+        <Providers>
           <NavBar />
           <main className='flex-1 flex flex-col'>{children}</main>
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );
