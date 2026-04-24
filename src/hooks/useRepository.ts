@@ -2,21 +2,17 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchRepoData } from '@/services/repoService';
-import { useState } from 'react';
 
-export const useRepository = () => {
-  const [targetUrl, setTargetUrl] = useState<string>('');
+export const useRepository = (owner: string, repo: string, branch: string = 'main') => {
+  const targetUrl = owner && repo ? `https://github.com/${owner}/${repo}` : '';
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['repository', targetUrl],
+    queryKey: ['repository', owner, repo, branch],
     queryFn: () => fetchRepoData(targetUrl),
-    enabled: !!targetUrl,
+    enabled: !!owner && !!repo,
     retry: false,
+    staleTime: 1000 * 60 * 5,
   });
 
-  const search = (url: string) => {
-    setTargetUrl(url);
-  };
-
-  return { data, isLoading, error, search };
+  return { data, isLoading, error };
 };

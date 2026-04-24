@@ -35,7 +35,7 @@ export const RepoUrlInput = ({ onSearch }: Props) => {
             type='text'
             value={url}
             onChange={handleUrlChange}
-            placeholder='https://github.com/username/repo'
+            placeholder='예) https://github.com/facebook/react'
             className='w-full p-4 bg-transparent outline-none text-text-main placeholder:text-text-muted/50 text-sm'
           />
           <button
