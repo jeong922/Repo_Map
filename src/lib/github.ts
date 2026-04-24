@@ -1,6 +1,11 @@
 import { Octokit } from 'octokit';
 
-const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN,
+  headers: {
+    'X-GitHub-Api-Version': '2022-11-28',
+  },
+});
 
 export interface FileNode {
   path: string;
@@ -11,6 +16,7 @@ export interface FileNode {
 export interface RepoResponse {
   tree: FileNode[];
   fileContents: { path: string; content: string }[];
+  branchName: string;
 }
 
 const excludePatterns = [
@@ -27,16 +33,23 @@ const excludePatterns = [
   '.pdf',
 ];
 
-export async function getRepositoryContext(
-  owner: string,
-  repo: string,
-  branch: string = 'main',
-): Promise<RepoResponse> {
+export async function getRepositoryContext(owner: string, repo: string, branch?: string): Promise<RepoResponse> {
   try {
+    let targetBranch = branch;
+
+    if (!targetBranch) {
+      const { data: repoInfo } = await octokit.rest.repos.get({
+        owner,
+        repo,
+      });
+
+      targetBranch = repoInfo.default_branch;
+    }
+
     const { data: treeData } = await octokit.rest.git.getTree({
       owner,
       repo,
-      tree_sha: branch,
+      tree_sha: targetBranch,
       recursive: 'true',
     });
 
@@ -56,7 +69,7 @@ export async function getRepositoryContext(
           owner,
           repo,
           path: file.path!,
-          ref: branch,
+          ref: targetBranch,
         });
 
         if ('content' in data) {
@@ -76,6 +89,7 @@ export async function getRepositoryContext(
     return {
       tree,
       fileContents,
+      branchName: targetBranch,
     };
   } catch (error) {
     console.error('GitHub Data Fetch Error:', error);

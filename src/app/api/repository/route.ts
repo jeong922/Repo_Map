@@ -7,16 +7,17 @@ export async function GET(request: NextRequest) {
 
     const owner = searchParams.get('owner');
     const repo = searchParams.get('repo');
-    const branch = searchParams.get('branch') || 'main';
+    const branch = searchParams.get('branch');
 
     if (!owner || !repo) {
       return NextResponse.json({ success: false, error: 'owner와 repo 파라미터가 누락되었습니다.' }, { status: 400 });
     }
 
-    const data: RepoResponse = await getRepositoryContext(owner, repo, branch);
+    const data: RepoResponse = await getRepositoryContext(owner, repo, branch || undefined);
 
     return NextResponse.json({
       success: true,
+      currentBranch: data.branchName,
       treeCount: data.tree.length,
       fileContentCount: data.fileContents.length,
       tree: data.tree,
