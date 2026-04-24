@@ -26,8 +26,10 @@ export default function Home() {
         return;
       }
 
-      const [owner, repo] = pathname;
-      router.push(`/repository/${owner}/${repo}`);
+      const filteredPath = pathname.filter((segment) => segment !== 'tree');
+
+      const resultPath = filteredPath.join('/');
+      router.push(`/repository/${resultPath}`);
     } catch (e) {
       setError('유효한 URL 형식이 아닙니다. (예 : https://github.com/facebook/react)');
     }
