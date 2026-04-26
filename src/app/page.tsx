@@ -30,7 +30,7 @@ export default function Home() {
 
       const resultPath = filteredPath.join('/');
       router.push(`/repository/${resultPath}`);
-    } catch (e) {
+    } catch {
       setError('유효한 URL 형식이 아닙니다. (예 : https://github.com/facebook/react)');
     }
   };
