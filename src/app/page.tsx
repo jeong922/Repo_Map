@@ -36,9 +36,14 @@ export default function Home() {
   };
 
   return (
-    <div className=' flex-1 flex items-center justify-center'>
-      <span>{error}</span>
+    <div className=' flex-1 flex items-center justify-center flex-col gap-4'>
       <RepoUrlInput onSearch={handleSearch} />
+      {error && (
+        <div className='flex items-center gap-2 px-3 py-1 rounded-full bg-surface border border-border-subtle shadow-sm animate-in fade-in slide-in-from-top-2 duration-300'>
+          <span className='w-1.5 h-1.5 rounded-full bg-red-400' />
+          <span className='text-xs font-medium text-text-muted'>{error}</span>
+        </div>
+      )}
     </div>
   );
 }
