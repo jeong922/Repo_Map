@@ -1,3 +1,4 @@
+import { FileNode, RepoResponse } from '@/types/github';
 import { Octokit } from 'octokit';
 
 const octokit = new Octokit({
@@ -6,18 +7,6 @@ const octokit = new Octokit({
     'X-GitHub-Api-Version': '2022-11-28',
   },
 });
-
-export interface FileNode {
-  path: string;
-  type: 'blob' | 'tree';
-  content?: string;
-}
-
-export interface RepoResponse {
-  tree: FileNode[];
-  fileContents: { path: string; content: string }[];
-  branchName: string;
-}
 
 const excludePatterns = [
   'node_modules',

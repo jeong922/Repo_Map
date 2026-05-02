@@ -1,14 +1,6 @@
-import { FileNode } from '@/lib/github';
+import { RepositoryData } from '@/types/github';
 
-export interface RepoResponse {
-  success: boolean;
-  treeCount: number;
-  fileContentCount: number;
-  tree: FileNode[];
-  sourceContext: { path: string; content: string }[];
-}
-
-export const fetchRepoData = async (url: string): Promise<RepoResponse> => {
+export const fetchRepoData = async (url: string): Promise<RepositoryData> => {
   const match = url.match(/github\.com\/([^/]+)\/([^/]+)(?:\/tree\/(.+))?/);
 
   if (!match) {
