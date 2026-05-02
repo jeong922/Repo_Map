@@ -1,12 +1,12 @@
-import { RepositoryData } from '@/types/github';
+import { FileNode, RepositoryData, SourceContext } from '@/types/github';
 
 export const generateAnalysis = async (repoData: RepositoryData) => {
   const treeStructure = repoData.tree
-    .map((item: { path: string; type: string }) => `${item.type === 'tree' ? '📁' : '📄'} ${item.path}`)
+    .map((item: FileNode) => `${item.type === 'tree' ? '📁' : '📄'} ${item.path}`)
     .join('\n');
 
   const codeContext = repoData.sourceContext
-    .map((file: { path: string; content: string }) => `--- FILE: ${file.path} ---\n${file.content}\n`)
+    .map((file: SourceContext) => `--- FILE: ${file.path} ---\n${file.content}\n`)
     .join('\n');
 
   const finalPrompt = `
