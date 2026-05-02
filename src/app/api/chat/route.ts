@@ -1,10 +1,12 @@
 import { ai } from '@/lib/gemini';
+import { generateAnalysis } from '@/lib/repoAnalysis';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const userPrompt = body.prompt;
+
+    const userPrompt = await generateAnalysis(body.prompt);
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
