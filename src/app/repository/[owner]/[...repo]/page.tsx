@@ -1,20 +1,18 @@
-'use client';
+import { RepositoryDetail } from '@/components/RepositoryDetail';
+import { Suspense } from 'react';
 
-import { useRepository } from '@/hooks/useRepository';
-import { useParams } from 'next/navigation';
+export default async function RepositoryDetailPage({
+  params,
+}: {
+  params: Promise<{ owner: string; repo?: string[] }>;
+}) {
+  const { owner, repo } = await params;
 
-export default function RepositoryDetail() {
-  const params = useParams();
-  const owner = params.owner as string;
-  const repoSegments = params.repo as string[];
-  const repoName = repoSegments[0];
-  const branch = repoSegments[1];
-
-  const { data, isLoading, error } = useRepository(owner, repoName, branch);
+  const [repoName, branch] = repo ?? [];
 
   return (
-    <div>
-      {owner} {repoName} {branch}
-    </div>
+    <Suspense fallback={<div>로딩 중...</div>}>
+      <RepositoryDetail owner={owner} repoName={repoName} branch={branch} />
+    </Suspense>
   );
 }
