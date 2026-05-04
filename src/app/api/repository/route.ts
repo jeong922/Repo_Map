@@ -1,4 +1,5 @@
-import { getRepositoryContext, RepoResponse } from '@/lib/github';
+import { getRepositoryContext } from '@/lib/github';
+import { RepoResponse } from '@/types/github';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
