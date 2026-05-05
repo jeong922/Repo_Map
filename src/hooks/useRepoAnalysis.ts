@@ -14,6 +14,7 @@ export const useRepoAnalysis = (repoData: RepositoryData | null) => {
     },
     enabled: !!repoData && repoData.success,
     staleTime: 1000 * 60 * 30,
+    retry: 1,
   });
 
   return {
