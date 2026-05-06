@@ -22,6 +22,7 @@ type CodeProps = ComponentPropsWithoutRef<'code'> & {
 };
 
 const MarkdownComponents: Components = {
+  hr: () => <hr className='my-12 border-0 h-px bg-border-subtle/80' />,
   h3: ({ children }) => (
     <h3 className='group text-2xl font-bold text-text-main mt-8 mb-8 flex items-center gap-4'>
       <span className='h-8 w-1.5 bg-accent rounded-full scale-y-75 group-hover:scale-y-100 transition-transform duration-300' />
