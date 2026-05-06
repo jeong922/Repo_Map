@@ -9,7 +9,9 @@ export const LoadingView = ({ message = '잠시만 기다려주세요...' }: Pro
         <div className='absolute inset-0 border-4 border-accent-soft rounded-full' />
         <div className='absolute inset-0 border-4 border-accent border-t-transparent rounded-full animate-spin' />
       </div>
-      <p className='text-text-muted font-medium animate-pulse'>{message}</p>
+      <p className='text-text-muted font-medium animate-pulse whitespace-pre-wrap text-center leading-relaxed'>
+        {message}
+      </p>
     </div>
   );
 };
