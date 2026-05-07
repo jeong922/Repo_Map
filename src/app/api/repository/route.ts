@@ -16,14 +16,18 @@ export async function GET(request: NextRequest) {
 
     const data: RepoResponse = await getRepositoryContext(owner, repo, branch || undefined);
 
+    const finalContext = data.fileContents.filter((f) => {
+      const p = f.path.toLowerCase();
+      return p.includes('src/') || p === 'package.json' || p.endsWith('/package.json');
+    });
+
     return NextResponse.json({
       success: true,
       currentBranch: data.branchName,
       treeCount: data.tree.length,
       fileContentCount: data.fileContents.length,
       tree: data.tree,
-      // 임시로 일부만 가져오기
-      sourceContext: data.fileContents.filter((f) => f.path.includes('src/')).slice(0, 3),
+      sourceContext: finalContext,
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
