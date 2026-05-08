@@ -94,9 +94,10 @@ export async function getRepositoryContext(owner: string, repo: string, branch?:
 
         const minifiedContent = decodedContent
           .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '')
+          .replace(/[ \t]+/g, ' ')
           .replace(/\n\s*\n/g, '\n')
           .trim()
-          .substring(0, 5000);
+          .substring(0, 4000);
 
         return {
           path: file.path!,
