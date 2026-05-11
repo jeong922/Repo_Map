@@ -1,4 +1,4 @@
-import { parseGitHubUrl } from '@/lib/github-api';
+import { parseGitHubUrl } from '@/lib/parseGitHubUrl';
 
 describe('parseGitHubUrl', () => {
   describe('정상 케이스', () => {
