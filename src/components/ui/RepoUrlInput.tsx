@@ -16,11 +16,13 @@ export const RepoUrlInput = ({ onSearch }: Props) => {
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!url.trim()) {
+
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) {
       return;
     }
 
-    onSearch(url);
+    onSearch(trimmedUrl);
   };
 
   return (
@@ -40,6 +42,7 @@ export const RepoUrlInput = ({ onSearch }: Props) => {
           />
           <button
             type='submit'
+            disabled={!url.trim()}
             aria-label='Analyze repository'
             className='cursor-pointer group/btn flex items-center justify-center px-5 h-14 bg-brand hover:bg-brand-hover transition-colors text-background'
           >
