@@ -5,74 +5,90 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-
-    // Prompt 생성
+    // --- [측정 시작] 프롬프트 생성 시간 측정 ---
     const promptStart = performance.now();
-
     const userPrompt = await generateAnalysis(body.prompt);
-
     const promptEnd = performance.now();
+    const promptDuration = ((promptEnd - promptStart) / 1000).toFixed(3);
 
-    // 토큰 측정 (개발 환경에서만)
-    let inputTokens = 0;
-    let tokenDuration = 0;
-
+    // --- [측정] 개발 환경에서만 입력 토큰 수 사전 계산 ---
+    let preInputTokens = 0;
     if (process.env.NODE_ENV === 'development') {
-      const tokenStart = performance.now();
-
       const tokenResponse = await ai.models.countTokens({
         model: 'gemini-2.5-flash',
         contents: userPrompt,
       });
-
-      const tokenEnd = performance.now();
-
-      inputTokens = tokenResponse.totalTokens ?? 0;
-      tokenDuration = (tokenEnd - tokenStart) / 1000;
+      preInputTokens = tokenResponse.totalTokens ?? 0;
     }
 
-    // 실제 Gemini 생성 시간 측정
+    // --- [측정 시작] AI 응답 생성 시간 측정 시점 ---
     const generateStart = performance.now();
+    let firstByteTime: number | null = null;
 
-    const response = await ai.models.generateContent({
+    const result = await ai.models.generateContentStream({
       model: 'gemini-2.5-flash',
       contents: userPrompt,
     });
 
-    const generateEnd = performance.now();
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        let totalOutputTokens = 0;
+        let finalTotalTokens = 0;
 
-    const text = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        try {
+          for await (const chunk of result) {
+            // --- [측정] 첫 번째 데이터 조각이 도착한 시점(TTFB) 기록 ---
+            if (firstByteTime === null) {
+              firstByteTime = performance.now();
+            }
 
-    // usage metadata 활용
-    const usage = response.usageMetadata;
+            const text = chunk.text;
+            if (text) {
+              controller.enqueue(encoder.encode(text));
+            }
 
-    const outputTokens = usage?.candidatesTokenCount ?? 0;
-    const totalTokens = usage?.totalTokenCount ?? 0;
+            // --- [측정] 응답 메타데이터에서 실제 토큰 사용량 추출 ---
+            if (chunk.usageMetadata) {
+              totalOutputTokens = chunk.usageMetadata.candidatesTokenCount ?? 0;
+              finalTotalTokens = chunk.usageMetadata.totalTokenCount ?? 0;
+            }
+          }
 
-    // 시간 계산
-    const promptDuration = ((promptEnd - promptStart) / 1000).toFixed(2);
+          const generateEnd = performance.now();
 
-    const generationDuration = ((generateEnd - generateStart) / 1000).toFixed(2);
+          // 생성 요청부터 첫 글자가 출력되기까지 걸린 시간
+          const ttfb = firstByteTime ? ((firstByteTime - generateStart) / 1000).toFixed(2) : '0.00';
+          // 전체 생성 시간
+          const generationDuration = ((generateEnd - generateStart) / 1000).toFixed(2);
+          // 총 프로세스 시간
+          const totalDuration = ((generateEnd - promptStart) / 1000).toFixed(2);
 
-    const totalDuration = ((generateEnd - promptStart) / 1000).toFixed(2);
+          console.log('\n[Gemini 스트리밍 성능 분석]');
+          console.log('------------------------------------');
+          console.log(`사용자 체감 대기 (TTFB) : ${ttfb}s`);
+          console.log(`전체 텍스트 생성 시간   : ${generationDuration}s`);
+          console.log(`총 프로세스 완료 시간   : ${totalDuration}s`);
+          console.log('------------------------------------');
+          console.log(`입력 토큰 (예상/실제)   : ${preInputTokens} / ${finalTotalTokens - totalOutputTokens}`);
+          console.log(`출력 토큰 (생성량)     : ${totalOutputTokens}`);
+          console.log(`프롬프트 준비 시간     : ${promptDuration}s`);
+          console.log('====================================\n');
 
-    // 성능 로그
-    console.log('====================================');
-    console.log('[Gemini 성능 리포트]');
-    console.log(`- Prompt 생성 시간: ${promptDuration}s`);
+          controller.close();
+        } catch (err) {
+          console.error('Stream Error:', err);
+          controller.error(err);
+        }
+      },
+    });
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`- 입력 토큰 수: ${inputTokens}`);
-      console.log(`- 토큰 계산 시간: ${tokenDuration.toFixed(2)}s`);
-    }
-
-    console.log(`- 출력 토큰 수: ${outputTokens}`);
-    console.log(`- 총 토큰 수: ${totalTokens}`);
-    console.log(`- Gemini 생성 시간: ${generationDuration}s`);
-    console.log(`- 전체 처리 시간: ${totalDuration}s`);
-    console.log('====================================');
-
-    return NextResponse.json({ text });
+    return new NextResponse(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked',
+      },
+    });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
 
