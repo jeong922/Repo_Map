@@ -9,10 +9,41 @@ const octokit = new Octokit({
 });
 
 const excludePatterns = [
-  'node_modules',
   '.git',
+  '.github',
+  '.vscode',
+  '.idea',
+  '.DS_Store',
+  '.gitignore',
+  '.eslintignore',
   'package-lock.json',
   'yarn.lock',
+  'pnpm-lock.yaml',
+  'composer.lock',
+  'cargo.lock',
+  'gemfile.lock',
+  'go.sum',
+  'node_modules',
+  'dist',
+  'build',
+  'out',
+  'target',
+  'vendor',
+  'bin',
+  'obj',
+  '.next',
+  '.nuxt',
+  '.cache',
+  'tmp',
+  'temp',
+  '__tests__',
+  'test',
+  'tests',
+  'spec',
+  'mock',
+  '__mocks__',
+  'coverage',
+  '.nyc_output',
   '.png',
   '.jpg',
   '.jpeg',
@@ -20,28 +51,55 @@ const excludePatterns = [
   '.svg',
   '.ico',
   '.pdf',
-  '__tests__',
-  'test',
-  'mock',
-  '.github',
-  '.vscode',
+  '.mp4',
+  '.webp',
+  '.woff',
+  '.woff2',
+  '.ttf',
+  '.eot',
   'babel.config',
   'jest.config',
-  '.gitignore',
+  'prettier.config',
+  'webpack.config',
+  'rollup.config',
+  'tsconfig.json',
+  'jsconfig.json',
+  '.eslintrc',
+  '.prettierrc',
+  'postcss.config',
+  'tailwind.config',
+  'vite.config',
+  '.env',
+  '.env.local',
+  '.env.development',
+  '.env.production',
+  'npm-debug.log',
+  'yarn-debug.log',
+  'yarn-error.log',
+  '.log',
 ];
 
 const getPriority = (path: string): number => {
   const p = path.toLowerCase();
 
-  if (p === 'package.json' || p.endsWith('/package.json')) return 1;
+  if (p.endsWith('package.json') || p.endsWith('requirements.txt') || p.endsWith('go.mod') || p.endsWith('cargo.toml'))
+    return 1;
 
-  if (p.includes('src/app') || p.includes('src/index')) return 2;
+  if (
+    p.includes('/services/') ||
+    p.includes('/api/') ||
+    p.includes('/logic/') ||
+    p.includes('/controller/') ||
+    p.includes('/domain/')
+  )
+    return 2;
 
-  if (p.startsWith('src/') && !p.includes('/utils/')) return 3;
+  if (p.includes('/app/') || p.includes('/pages/') || p.includes('/routes/') || p.match(/(main|index|app)\.[a-z]+$/))
+    return 3;
 
-  if (p.includes('/utils/')) return 4;
+  if (p.includes('/components/') || p.includes('/modules/') || p.includes('/hooks/')) return 4;
 
-  if (p.endsWith('.html') || p.endsWith('.css')) return 5;
+  if (p.includes('/utils/') || p.includes('/helpers/') || p.includes('/common/')) return 5;
 
   return 6;
 };
@@ -69,40 +127,68 @@ export async function getRepositoryContext(owner: string, repo: string, branch?:
 
     const sourceFiles = treeData.tree
       .filter((file) => {
-        return file.type === 'blob' && !excludePatterns.some((pattern) => file.path?.includes(pattern));
-      })
-      .sort((a, b) => getPriority(a.path!) - getPriority(b.path!));
+        if (file.type !== 'blob' || !file.path) {
+          return false;
+        }
 
-    console.log(
-      'Filtered Files:',
-      sourceFiles.map((f) => f.path),
-    );
+        const path = file.path.toLowerCase();
+
+        if (excludePatterns.some((pattern) => path.includes(pattern))) {
+          return false;
+        }
+
+        const binaryExtensions = [
+          '.exe',
+          '.dll',
+          '.so',
+          '.pyc',
+          '.zip',
+          '.gz',
+          '.tar',
+          '.db',
+          '.sqlite',
+          '.bin',
+          '.wasm',
+        ];
+        if (binaryExtensions.some((ext) => path.endsWith(ext))) {
+          return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => getPriority(a.path!) - getPriority(b.path!))
+      .slice(0, 10);
 
     const contents = await Promise.all(
       sourceFiles.map(async (file) => {
         if (!file.sha) return null;
 
-        const { data } = await octokit.rest.git.getBlob({
-          owner,
-          repo,
-          file_sha: file.sha,
-        });
+        try {
+          const { data } = await octokit.rest.git.getBlob({
+            owner,
+            repo,
+            file_sha: file.sha,
+          });
 
-        const decodedContent = Buffer.from(data.content, 'base64').toString('utf-8');
+          const decodedContent = Buffer.from(data.content, 'base64').toString('utf-8');
+          if (!decodedContent || decodedContent.trim().length === 0) return null;
 
-        if (!decodedContent || decodedContent.trim().length === 0) return null;
+          const minifiedContent = decodedContent
+            .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '')
+            .replace(/^\s*(import|from|require|package|using)\s+.*$/gm, '')
+            .replace(/[ \t]+/g, ' ')
+            .replace(/\n\s*\n/g, '\n')
+            .trim()
+            .substring(0, 2000);
 
-        const minifiedContent = decodedContent
-          .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '')
-          .replace(/[ \t]+/g, ' ')
-          .replace(/\n\s*\n/g, '\n')
-          .trim()
-          .substring(0, 4000);
-
-        return {
-          path: file.path!,
-          content: minifiedContent,
-        };
+          return {
+            path: file.path!,
+            content: minifiedContent,
+          };
+        } catch (e) {
+          console.error(`Failed to fetch blob: ${file.path}`, e);
+          return null;
+        }
       }),
     );
 
