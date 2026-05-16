@@ -83,27 +83,36 @@ export const BINARY_EXTENSIONS = [
   '.wasm',
 ];
 
+interface PriorityRule {
+  readonly priority: number;
+  readonly patterns: readonly RegExp[];
+}
+
+const PRIORITY_RULES: readonly PriorityRule[] = [
+  {
+    priority: 1,
+    patterns: [/(package\.json|requirements\.txt|go\.mod|cargo\.toml)$/i],
+  },
+  {
+    priority: 2,
+    patterns: [/\/(services|api|logic|controller|domain)\//i],
+  },
+  {
+    priority: 3,
+    patterns: [/\/(app|pages|routes)\//i, /\/(main|index|app)\.[a-z]+$/i],
+  },
+  {
+    priority: 4,
+    patterns: [/\/(components|modules|hooks)\//i],
+  },
+  {
+    priority: 5,
+    patterns: [/\/(utils|helpers|common)\//i],
+  },
+];
+
 export const getPriority = (path: string): number => {
-  const p = path.toLowerCase();
+  const matchedRule = PRIORITY_RULES.find((rule) => rule.patterns.some((pattern) => pattern.test(path)));
 
-  if (p.endsWith('package.json') || p.endsWith('requirements.txt') || p.endsWith('go.mod') || p.endsWith('cargo.toml'))
-    return 1;
-
-  if (
-    p.includes('/services/') ||
-    p.includes('/api/') ||
-    p.includes('/logic/') ||
-    p.includes('/controller/') ||
-    p.includes('/domain/')
-  )
-    return 2;
-
-  if (p.includes('/app/') || p.includes('/pages/') || p.includes('/routes/') || p.match(/(main|index|app)\.[a-z]+$/))
-    return 3;
-
-  if (p.includes('/components/') || p.includes('/modules/') || p.includes('/hooks/')) return 4;
-
-  if (p.includes('/utils/') || p.includes('/helpers/') || p.includes('/common/')) return 5;
-
-  return 6;
+  return matchedRule?.priority ?? 6;
 };
