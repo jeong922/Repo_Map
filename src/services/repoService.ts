@@ -17,7 +17,9 @@ export const fetchRepoData = async (url: string): Promise<RepositoryData> => {
     params.append('branch', branch);
   }
 
-  const response = await fetch(`/api/repository?${params.toString()}`);
+  const baseUrl = typeof window !== 'undefined' ? '' : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+  const response = await fetch(`${baseUrl}/api/repository?${params.toString()}`);
 
   if (!response.ok) {
     const errorData = await response.json();
