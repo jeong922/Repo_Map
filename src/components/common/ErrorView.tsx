@@ -13,8 +13,8 @@ export const ErrorView = ({ message = '분석 중 오류가 발생했습니다.'
 
         <div className='-mt-10 flex flex-col items-center'>
           <h2 className='text-2xl font-bold text-text-main tracking-tight'>문제가 발생했습니다</h2>
-          <p className='text-text-muted text-sm max-w-72 leading-relaxed mt-2'>
-            {message} <br /> 잠시 후 다시 시도해 주세요.
+          <p className='text-text-muted text-sm max-w-72 leading-relaxed mt-2 text-center whitespace-pre-line'>
+            {message}
           </p>
         </div>
 
