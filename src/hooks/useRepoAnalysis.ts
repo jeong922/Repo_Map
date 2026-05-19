@@ -6,10 +6,8 @@ import { RepositoryData } from '@/types/github';
 export const useRepoAnalysis = (repoData: RepositoryData | null) => {
   const [streamingText, setStreamingText] = useState<string>('');
 
-  const queryKey = ['analysis', repoData?.treeCount, repoData?.currentBranch];
-
   const query = useQuery({
-    queryKey,
+    queryKey: ['analysis', { count: repoData?.treeCount, branch: repoData?.currentBranch }],
     queryFn: async () => {
       if (!repoData) {
         throw new Error('데이터가 없습니다.');
