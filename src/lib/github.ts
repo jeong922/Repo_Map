@@ -21,25 +21,27 @@ export async function getRepositoryContext(owner: string, repo: string, branch?:
       recursive: 'true',
     });
 
-    const tree: FileNode[] = treeData.tree.map((item) => ({
-      path: item.path!,
+    const validBlobFiles = treeData.tree
+      .filter((item): item is typeof item & { path: string } => {
+        if (item.type !== 'blob' || !item.path) return false;
+        const path = item.path.toLowerCase();
+        const isExcluded = EXCLUDE_PATTERNS.some((pattern) => path.includes(pattern));
+        const isBinary = BINARY_EXTENSIONS.some((ext) => path.endsWith(ext));
+        return !isExcluded && !isBinary;
+      })
+      .sort((a, b) => {
+        const priorityA = getPriority(a.path);
+        const priorityB = getPriority(b.path);
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        return a.path.localeCompare(b.path);
+      });
+
+    const filteredTree: FileNode[] = validBlobFiles.slice(0, 50).map((item) => ({
+      path: item.path,
       type: item.type as 'blob',
     }));
 
-    const sourceFiles = treeData.tree
-      .filter((file) => {
-        if (file.type !== 'blob' || !file.path) {
-          return false;
-        }
-
-        const path = file.path.toLowerCase();
-        return (
-          !EXCLUDE_PATTERNS.some((pattern) => path.includes(pattern)) &&
-          !BINARY_EXTENSIONS.some((ext) => path.endsWith(ext))
-        );
-      })
-      .sort((a, b) => getPriority(a.path!) - getPriority(b.path!))
-      .slice(0, 10);
+    const sourceFiles = validBlobFiles.slice(0, 10);
 
     const contents = await Promise.all(
       sourceFiles.map(async (file) => {
@@ -67,7 +69,7 @@ export async function getRepositoryContext(owner: string, repo: string, branch?:
       .slice(0, 7);
 
     return {
-      tree,
+      tree: filteredTree,
       fileContents,
       branchName: targetBranch,
     };

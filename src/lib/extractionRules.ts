@@ -91,23 +91,27 @@ interface PriorityRule {
 const PRIORITY_RULES: readonly PriorityRule[] = [
   {
     priority: 1,
-    patterns: [/(package\.json|requirements\.txt|go\.mod|cargo\.toml)$/i],
+    patterns: [/(package\.json|requirements\.txt|go\.mod|cargo\.toml|setup\.py|gemfile)$/i],
   },
   {
     priority: 2,
-    patterns: [/\/(services|api|logic|controller|domain)\//i],
+    patterns: [/\/(domain|service|services|core|business|logic|usecase|store|state|context|model|models)\//i],
   },
   {
     priority: 3,
-    patterns: [/\/(app|pages|routes)\//i, /\/(main|index|app)\.[a-z]+$/i],
+    patterns: [/\/(controller|controllers|api|routes|app|pages)\//i, /(?:^|\/)(main|index|app)\.[a-z]+$/i],
   },
   {
     priority: 4,
-    patterns: [/\/(components|modules|hooks)\//i],
+    patterns: [/\/(hooks|modules)\//i],
   },
   {
     priority: 5,
-    patterns: [/\/(utils|helpers|common)\//i],
+    patterns: [/\/(components|view|views)\//i],
+  },
+  {
+    priority: 6,
+    patterns: [/\/(utils|helpers|common|shared)\//i],
   },
 ];
 

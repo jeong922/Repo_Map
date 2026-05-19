@@ -1,11 +1,7 @@
-import { FileNode, RepositoryData, SourceContext } from '@/types/github';
+import { RepositoryData, SourceContext } from '@/types/github';
 
 export const generateAnalysis = async (repoData: RepositoryData) => {
-  const treeStructure = repoData.tree
-    .filter((item) => !item.path.includes('node_modules') && !item.path.includes('.git'))
-    .slice(0, 50)
-    .map((item: FileNode) => `${item.type === 'tree' ? 'D' : 'F'} ${item.path}`)
-    .join('\n');
+  const treeStructure = repoData.tree.map((item) => item.path).join('\n');
 
   const codeContext = repoData.sourceContext
     .map((file: SourceContext) => `// === ${file.path} ===\n${file.content}`)
