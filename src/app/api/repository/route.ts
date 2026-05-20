@@ -1,9 +1,16 @@
+import { isAllowedOrigin } from '@/lib/allowedOrigin';
 import { getRepositoryContext } from '@/lib/github';
 import { RepoResponse } from '@/types/github';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
+    const origin = req.headers.get('origin');
+
+    if (!isAllowedOrigin(origin)) {
+      return NextResponse.json({ success: false, error: '허용되지 않은 요청입니다.' }, { status: 403 });
+    }
+
     const body = await req.json();
 
     const { owner, repo, branch } = body;
