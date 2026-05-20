@@ -2,13 +2,11 @@ import { getRepositoryContext } from '@/lib/github';
 import { RepoResponse } from '@/types/github';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const { searchParams } = request.nextUrl;
+    const body = await req.json();
 
-    const owner = searchParams.get('owner');
-    const repo = searchParams.get('repo');
-    const branch = searchParams.get('branch');
+    const { owner, repo, branch } = body;
 
     if (!owner || !repo) {
       return NextResponse.json({ success: false, error: 'owner와 repo 파라미터가 누락되었습니다.' }, { status: 400 });
