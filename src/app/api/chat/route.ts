@@ -10,15 +10,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: '허용되지 않은 요청입니다.' }, { status: 403 });
     }
 
-    // 2. Body 데이터 추출 및 JSON 파싱 에러 방어
     let body;
+
     try {
       body = await req.json();
     } catch {
       return NextResponse.json({ success: false, error: '올바르지 않은 JSON 형식입니다.' }, { status: 400 });
     }
 
-    // 3. 필수 파라미터 검증
     if (!body.prompt) {
       return NextResponse.json({ success: false, error: 'prompt 파라미터가 누락되었습니다.' }, { status: 400 });
     }
@@ -29,16 +28,6 @@ export async function POST(req: NextRequest) {
     const promptEnd = performance.now();
     const promptDuration = ((promptEnd - promptStart) / 1000).toFixed(3);
 
-    // --- [측정] 개발 환경에서만 입력 토큰 수 사전 계산 ---
-    let preInputTokens = 0;
-    if (process.env.NODE_ENV === 'development') {
-      const tokenResponse = await ai.models.countTokens({
-        model: 'gemini-2.5-flash',
-        contents: userPrompt,
-      });
-      preInputTokens = tokenResponse.totalTokens ?? 0;
-    }
-
     // --- [측정 시작] AI 응답 생성 시간 측정 시점 ---
     const generateStart = performance.now();
     let firstByteTime: number | null = null;
@@ -46,8 +35,8 @@ export async function POST(req: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
-        let totalOutputTokens = 0;
-        let finalTotalTokens = 0;
+        let inputTokens = 0;
+        let outputTokens = 0;
         let closed = false;
 
         try {
@@ -69,8 +58,8 @@ export async function POST(req: NextRequest) {
 
             // --- [측정] 응답 메타데이터에서 실제 토큰 사용량 추출 ---
             if (chunk.usageMetadata) {
-              totalOutputTokens = chunk.usageMetadata.candidatesTokenCount ?? 0;
-              finalTotalTokens = chunk.usageMetadata.totalTokenCount ?? 0;
+              outputTokens = chunk.usageMetadata.candidatesTokenCount ?? 0;
+              inputTokens = (chunk.usageMetadata.totalTokenCount ?? 0) - outputTokens;
             }
           }
 
@@ -89,15 +78,14 @@ export async function POST(req: NextRequest) {
           console.log(`전체 텍스트 생성 시간   : ${generationDuration}s`);
           console.log(`총 프로세스 완료 시간   : ${totalDuration}s`);
           console.log('------------------------------------');
-          console.log(`입력 토큰 (예상/실제)   : ${preInputTokens} / ${finalTotalTokens - totalOutputTokens}`);
-          console.log(`출력 토큰 (생성량)     : ${totalOutputTokens}`);
+          console.log(`입력 토큰 수           : ${inputTokens}`);
+          console.log(`출력 토큰 (생성량)     : ${outputTokens}`);
           console.log(`프롬프트 준비 시간     : ${promptDuration}s`);
           console.log('====================================\n');
         } catch (err) {
           console.error('Stream Error:', err);
 
           controller.enqueue(encoder.encode('\n\nAI 서버가 현재 혼잡합니다. 잠시 후 다시 시도해주세요.'));
-          controller.close();
         } finally {
           if (!closed) {
             closed = true;
