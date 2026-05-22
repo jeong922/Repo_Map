@@ -14,10 +14,12 @@ interface Props {
 
 export const RepositoryDetail = ({ owner, repoName, branch }: Props) => {
   const { data: repoData } = useRepository(owner, repoName, branch);
-  const { analysisData, isAnalyzing, analysisError } = useRepoAnalysis(repoData ?? null);
+  const { analysisData, isAnalyzing, analysisError, retryAnalysis } = useRepoAnalysis(repoData ?? null);
 
   if (analysisError) {
-    return <ErrorView message={`분석 중 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.`} />;
+    return (
+      <ErrorView message={`분석 중 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.`} onRetry={() => retryAnalysis()} />
+    );
   }
 
   if (isAnalyzing && !analysisData) {

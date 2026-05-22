@@ -1,3 +1,4 @@
+import { ApiError } from '@/types/apiError';
 import { RepositoryData } from '@/types/github';
 
 export const analyzeRepository = async (repoData: RepositoryData, onChunk: (text: string) => void) => {
@@ -9,12 +10,12 @@ export const analyzeRepository = async (repoData: RepositoryData, onChunk: (text
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || 'AI 분석 중 오류가 발생했습니다.');
+    throw new ApiError(errorData.error || 'AI 분석 중 오류가 발생했습니다.', response.status);
   }
 
   const reader = response.body?.getReader();
   if (!reader) {
-    throw new Error('응답 스트림을 읽을 수 없습니다.');
+    throw new ApiError('응답 스트림을 읽을 수 없습니다.', 500);
   }
 
   const decoder = new TextDecoder();
