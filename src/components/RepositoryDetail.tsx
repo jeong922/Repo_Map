@@ -14,14 +14,16 @@ interface Props {
 
 export const RepositoryDetail = ({ owner, repoName, branch }: Props) => {
   const { data: repoData } = useRepository(owner, repoName, branch);
-  const { analysisData, isAnalyzing, analysisError } = useRepoAnalysis(repoData ?? null);
-
-  if (isAnalyzing) {
-    return <LoadingView message={`AI가 코드를 분석하여 인사이트를 도출하고 있습니다.\n잠시만 기다려주세요.`} />;
-  }
+  const { analysisData, isAnalyzing, analysisError, retryAnalysis } = useRepoAnalysis(repoData ?? null);
 
   if (analysisError) {
-    return <ErrorView message='분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' />;
+    return (
+      <ErrorView message={`분석 중 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.`} onRetry={() => retryAnalysis()} />
+    );
+  }
+
+  if (isAnalyzing && !analysisData) {
+    return <LoadingView message={`AI가 코드를 분석하여 인사이트를 도출하고 있습니다.\n잠시만 기다려주세요.`} />;
   }
 
   return (
@@ -32,9 +34,9 @@ export const RepositoryDetail = ({ owner, repoName, branch }: Props) => {
             <header className='relative px-8 pt-16 pb-12 md:px-16 border-b border-border-subtle bg-linear-to-br from-white/40 via-transparent to-transparent dark:from-white/3'>
               <div className='flex items-center gap-3 mb-8'>
                 <div className='flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20'>
-                  <div className='w-1.5 h-1.5 rounded-full bg-accent animate-pulse' />
+                  <div className={`w-1.5 h-1.5 rounded-full bg-accent ${isAnalyzing ? 'animate-pulse' : ''}`} />
                   <span className='text-[10px] font-bold text-accent uppercase tracking-[0.2em]'>
-                    Gemini AI Insights
+                    {isAnalyzing ? 'Gemini AI Analyzing...' : 'Gemini AI Insights'}
                   </span>
                 </div>
               </div>
@@ -57,6 +59,8 @@ export const RepositoryDetail = ({ owner, repoName, branch }: Props) => {
 
             <div className='px-8 py-12 md:px-16 md:py-16 overflow-hidden w-full wrap-break-word'>
               <MarkdownRenderer content={analysisData} />
+
+              {isAnalyzing && <span className='inline-block w-1.5 h-5 ml-1 bg-accent/50 animate-pulse align-middle' />}
             </div>
 
             <footer className='px-8 py-8 border-t border-border-subtle bg-black/1 dark:bg-white/1 text-center'>

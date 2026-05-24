@@ -11,13 +11,13 @@ export const fetchRepoData = async (url: string): Promise<RepositoryData> => {
 
   const branch = match[3] ? match[3].replace(/\/$/, '') : undefined;
 
-  const params = new URLSearchParams({ owner, repo });
+  const baseUrl = typeof window !== 'undefined' ? '' : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-  if (branch) {
-    params.append('branch', branch);
-  }
-
-  const response = await fetch(`/api/repository?${params.toString()}`);
+  const response = await fetch(`${baseUrl}/api/repository`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ owner, repo, branch }),
+  });
 
   if (!response.ok) {
     const errorData = await response.json();

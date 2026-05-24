@@ -1,14 +1,19 @@
+import { isAllowedOrigin } from '@/lib/allowedOrigin';
 import { getRepositoryContext } from '@/lib/github';
 import { RepoResponse } from '@/types/github';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const { searchParams } = request.nextUrl;
+    const origin = req.headers.get('origin');
 
-    const owner = searchParams.get('owner');
-    const repo = searchParams.get('repo');
-    const branch = searchParams.get('branch');
+    if (!isAllowedOrigin(origin)) {
+      return NextResponse.json({ success: false, error: '허용되지 않은 요청입니다.' }, { status: 403 });
+    }
+
+    const body = await req.json();
+
+    const { owner, repo, branch } = body;
 
     if (!owner || !repo) {
       return NextResponse.json({ success: false, error: 'owner와 repo 파라미터가 누락되었습니다.' }, { status: 400 });
@@ -16,18 +21,13 @@ export async function GET(request: NextRequest) {
 
     const data: RepoResponse = await getRepositoryContext(owner, repo, branch || undefined);
 
-    const finalContext = data.fileContents.filter((f) => {
-      const p = f.path.toLowerCase();
-      return p.includes('src/') || p === 'package.json' || p.endsWith('/package.json');
-    });
-
     return NextResponse.json({
       success: true,
       currentBranch: data.branchName,
       treeCount: data.tree.length,
       fileContentCount: data.fileContents.length,
       tree: data.tree,
-      sourceContext: finalContext,
+      sourceContext: data.fileContents,
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';

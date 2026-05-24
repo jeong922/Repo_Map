@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { RepoUrlInput } from './ui/RepoUrlInput';
-import { parseGitHubUrl } from '@/lib/github-api';
+import { parseGitHubUrl } from '@/lib/parseGitHubUrl';
 
 export const SearchSection = () => {
   const router = useRouter();

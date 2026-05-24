@@ -1,59 +1,18 @@
 import { FileNode, RepoResponse } from '@/types/github';
 import { Octokit } from 'octokit';
+import { BINARY_EXTENSIONS, EXCLUDE_PATTERNS, getPriority } from './extractionRules';
+import { minifyCode } from './minifyCode';
 
 const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN,
   headers: {
-    'X-GitHub-Api-Version': '2022-11-28',
+    'X-GitHub-Api-Version': '2026-03-10',
   },
 });
 
-const excludePatterns = [
-  'node_modules',
-  '.git',
-  'package-lock.json',
-  'yarn.lock',
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.gif',
-  '.svg',
-  '.ico',
-  '.pdf',
-  '__tests__',
-  'test',
-  'mock',
-  '.github',
-  '.vscode',
-  'babel.config',
-  'jest.config',
-  '.gitignore',
-];
-
-const getPriority = (path: string): number => {
-  const p = path.toLowerCase();
-
-  if (p === 'package.json' || p.endsWith('/package.json')) return 1;
-
-  if (p.includes('src/app') || p.includes('src/index')) return 2;
-
-  if (p.startsWith('src/') && !p.includes('/utils/')) return 3;
-
-  if (p.includes('/utils/')) return 4;
-
-  if (p.endsWith('.html') || p.endsWith('.css')) return 5;
-
-  return 6;
-};
-
 export async function getRepositoryContext(owner: string, repo: string, branch?: string): Promise<RepoResponse> {
   try {
-    let targetBranch = branch;
-
-    if (!targetBranch) {
-      const { data: repoInfo } = await octokit.rest.repos.get({ owner, repo });
-      targetBranch = repoInfo.default_branch;
-    }
+    const targetBranch = branch || (await octokit.rest.repos.get({ owner, repo })).data.default_branch;
 
     const { data: treeData } = await octokit.rest.git.getTree({
       owner,
@@ -62,46 +21,46 @@ export async function getRepositoryContext(owner: string, repo: string, branch?:
       recursive: 'true',
     });
 
-    const tree: FileNode[] = treeData.tree.map((item) => ({
-      path: item.path!,
+    const validBlobFiles = treeData.tree
+      .filter((item): item is typeof item & { path: string } => {
+        if (item.type !== 'blob' || !item.path) return false;
+        const path = item.path.toLowerCase();
+        const isExcluded = EXCLUDE_PATTERNS.some((pattern) => path.includes(pattern));
+        const isBinary = BINARY_EXTENSIONS.some((ext) => path.endsWith(ext));
+        return !isExcluded && !isBinary;
+      })
+      .sort((a, b) => {
+        const priorityA = getPriority(a.path);
+        const priorityB = getPriority(b.path);
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        return a.path.localeCompare(b.path);
+      });
+
+    const filteredTree: FileNode[] = validBlobFiles.slice(0, 50).map((item) => ({
+      path: item.path,
       type: item.type as 'blob',
     }));
 
-    const sourceFiles = treeData.tree
-      .filter((file) => {
-        return file.type === 'blob' && !excludePatterns.some((pattern) => file.path?.includes(pattern));
-      })
-      .sort((a, b) => getPriority(a.path!) - getPriority(b.path!));
-
-    console.log(
-      'Filtered Files:',
-      sourceFiles.map((f) => f.path),
-    );
+    const sourceFiles = validBlobFiles.slice(0, 10);
 
     const contents = await Promise.all(
       sourceFiles.map(async (file) => {
         if (!file.sha) return null;
 
-        const { data } = await octokit.rest.git.getBlob({
-          owner,
-          repo,
-          file_sha: file.sha,
-        });
+        try {
+          const { data } = await octokit.rest.git.getBlob({ owner, repo, file_sha: file.sha });
 
-        const decodedContent = Buffer.from(data.content, 'base64').toString('utf-8');
+          const decodedContent = Buffer.from(data.content, 'base64').toString('utf-8');
+          if (!decodedContent || decodedContent.trim().length === 0) return null;
 
-        if (!decodedContent || decodedContent.trim().length === 0) return null;
-
-        const minifiedContent = decodedContent
-          .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '')
-          .replace(/\n\s*\n/g, '\n')
-          .trim()
-          .substring(0, 5000);
-
-        return {
-          path: file.path!,
-          content: minifiedContent,
-        };
+          return {
+            path: file.path!,
+            content: minifyCode(decodedContent),
+          };
+        } catch (e) {
+          console.error(`Failed to fetch blob: ${file.path}`, e);
+          return null;
+        }
       }),
     );
 
@@ -110,7 +69,7 @@ export async function getRepositoryContext(owner: string, repo: string, branch?:
       .slice(0, 7);
 
     return {
-      tree,
+      tree: filteredTree,
       fileContents,
       branchName: targetBranch,
     };
