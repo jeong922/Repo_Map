@@ -6,7 +6,14 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-export const ratelimit = new Ratelimit({
-  redis: redis,
+export const repositoryRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(20, '60 s'),
+  prefix: 'repository',
+});
+
+export const chatRateLimit = new Ratelimit({
+  redis,
   limiter: Ratelimit.slidingWindow(10, '60 s'),
+  prefix: 'chat',
 });

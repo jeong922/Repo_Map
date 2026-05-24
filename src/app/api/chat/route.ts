@@ -1,6 +1,6 @@
 import { isAllowedOrigin } from '@/lib/allowedOrigin';
 import { ai } from '@/lib/gemini';
-import { ratelimit } from '@/lib/rateLimit';
+import { chatRateLimit } from '@/lib/rateLimit';
 import { generateAnalysis } from '@/lib/repoAnalysis';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'anonymous';
 
-    const { success } = await ratelimit.limit(ip);
+    const { success } = await chatRateLimit.limit(ip);
 
     if (!success) {
       return NextResponse.json(
