@@ -1,10 +1,25 @@
 import { isAllowedOrigin } from '@/lib/allowedOrigin';
 import { ai } from '@/lib/gemini';
+import { ratelimit } from '@/lib/rateLimit';
 import { generateAnalysis } from '@/lib/repoAnalysis';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'anonymous';
+
+    const { success } = await ratelimit.limit(ip);
+
+    if (!success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: '요청 횟수를 초과했습니다.',
+        },
+        { status: 429 },
+      );
+    }
+
     const origin = req.headers.get('origin');
     if (!isAllowedOrigin(origin)) {
       return NextResponse.json({ success: false, error: '허용되지 않은 요청입니다.' }, { status: 403 });
