@@ -1,6 +1,6 @@
 import { isAllowedOrigin } from '@/lib/allowedOrigin';
 import { getRepositoryContext } from '@/lib/github';
-import { ratelimit } from '@/lib/rateLimit';
+import { repositoryRateLimit } from '@/lib/rateLimit';
 import { RepoResponse } from '@/types/github';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'anonymous';
 
-    const { success } = await ratelimit.limit(ip);
+    const { success } = await repositoryRateLimit.limit(ip);
 
     if (!success) {
       return NextResponse.json(
