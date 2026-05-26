@@ -2,6 +2,10 @@
 
 GitHub API로 받은 저장소 데이터를 Gemini API를 이용해 분석하여 분석 결과를 보여주는 프로젝트
 
+## 🚀 배포
+
+[Repo Map](https://repo-map-rose.vercel.app/)
+
 ## ⚙️ 기술
 
 ### Frontend & Framework
@@ -45,6 +49,49 @@ GitHub API로 받은 저장소 데이터를 Gemini API를 이용해 분석하여
 ![ts-node](https://img.shields.io/badge/ts--node-3178C6?logo=typescript)
 
 ## 📜 설계
+
+<details>
+<summary><strong>📃 시퀀스 다이어그램</strong></summary>
+
+```mermaid
+sequenceDiagram
+    participant User as 사용자
+    participant FE as Frontend (Next.js)
+    participant BE as API Route (Node Runtime)
+    participant Redis as Upstash (Rate Limit)
+    participant GH as GitHub API (Octokit)
+    participant AI as Google Gemini API
+
+    User->>FE: 저장소 URL 입력
+
+    FE->>BE: POST /api/repository
+    BE->>Redis: IP 기반 Rate Limit 확인
+    Redis-->>BE: 요청 허용 여부
+
+    BE->>GH: 저장소 트리 및 파일 요청
+    GH-->>BE: Raw Repository Data
+
+    BE->>BE: 제외 파일 필터링
+    BE->>BE: 우선순위 정렬
+    BE->>BE: Minify 처리
+    BE-->>FE: Repository Context 반환
+
+    FE->>BE: POST /api/chat (Context 전달)
+
+    BE->>Redis: IP 기반 Rate Limit 확인
+    Redis-->>BE: 요청 허용 여부
+
+    BE->>BE: generateAnalysis()
+    BE->>AI: Prompt 전송 (Streaming)
+
+    AI-->>BE: Text Chunk 반환
+    BE-->>FE: Text Stream 전달
+
+    FE->>FE: Markdown 렌더링
+    FE-->>User: 실시간 분석 결과 표시
+```
+
+</details>
 
 <details>
 <summary><strong>📃 API 문서</strong></summary>
