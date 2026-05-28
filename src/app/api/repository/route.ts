@@ -11,13 +11,7 @@ export async function POST(req: NextRequest) {
     const { success } = await repositoryRateLimit.limit(ip);
 
     if (!success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: '요청 횟수를 초과했습니다.',
-        },
-        { status: 429 },
-      );
+      return NextResponse.json({ success: false, error: '요청 횟수를 초과했습니다.' }, { status: 429 });
     }
 
     const origin = req.headers.get('origin');

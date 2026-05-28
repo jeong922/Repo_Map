@@ -66,6 +66,8 @@ export const RepositoryDetail = ({ owner, repoName, branch }: Props) => {
             <footer className='px-8 py-8 border-t border-border-subtle bg-black/1 dark:bg-white/1 text-center'>
               <p className='text-xs text-text-muted font-medium opacity-60 flex items-center justify-center gap-2'>
                 <span className='w-1 h-1 rounded-full bg-text-muted opacity-40' />
+                Powered by Google Gemini 2.5 Flash
+                <span className='mx-1 opacity-40'>|</span>
                 이 분석은 AI에 의해 생성되었으며 실제 코드 구조와 차이가 있을 수 있습니다.
                 <span className='w-1 h-1 rounded-full bg-text-muted opacity-40' />
               </p>
