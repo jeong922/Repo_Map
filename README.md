@@ -343,12 +343,14 @@ AI 분석을 위한 컨텍스트 데이터를 반환합니다.
 - 올바른 GitHub 저장소 URL을 입력하고 분석 버튼을 클릭하면 상세 페이지를 이동하게 되고, 분석을 시작한다.
 
 예시 화면:
+<img width="1280" height="720" alt="home" src="https://github.com/user-attachments/assets/e6d4a7db-d3ee-4b7e-bea9-2cf6cfc0453a" />
 
 ### 상세 페이지
 
 - 저장소 분석 결과를 확인할 수 있는 화면으로 AI 분석 결과 스트리밍 출력하며 Markdown 렌더링 한다.
 
 예시 화면:
+<img width="1280" height="720" alt="detail" src="https://github.com/user-attachments/assets/ffabcfbb-c334-4855-b5c3-edf0c3c42c7f" />
 
 ## 🛠️ 성능 최적화 및 문제 해결
 
