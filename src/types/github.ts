@@ -5,7 +5,7 @@ export interface FileNode {
 
 export interface RawTreeItem {
   path: string;
-  type: 'blob' | 'tree';
+  type: string;
   sha: string;
   mode?: string;
   size?: number;
