@@ -1,7 +1,8 @@
 import { FileNode, RepoResponse } from '@/types/github';
 import { Octokit } from 'octokit';
-import { BINARY_EXTENSIONS, EXCLUDE_PATTERNS, getPriority } from './extractionRules';
 import { minifyCode } from './minifyCode';
+import { sortFilesByPriority } from './sortFilesByPriority';
+import { filterValidFiles } from './filterValidFiles';
 
 const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN,
@@ -21,20 +22,7 @@ export async function getRepositoryContext(owner: string, repo: string, branch?:
       recursive: 'true',
     });
 
-    const validBlobFiles = treeData.tree
-      .filter((item): item is typeof item & { path: string } => {
-        if (item.type !== 'blob' || !item.path) return false;
-        const path = item.path.toLowerCase();
-        const isExcluded = EXCLUDE_PATTERNS.some((pattern) => path.includes(pattern));
-        const isBinary = BINARY_EXTENSIONS.some((ext) => path.endsWith(ext));
-        return !isExcluded && !isBinary;
-      })
-      .sort((a, b) => {
-        const priorityA = getPriority(a.path);
-        const priorityB = getPriority(b.path);
-        if (priorityA !== priorityB) return priorityA - priorityB;
-        return a.path.localeCompare(b.path);
-      });
+    const validBlobFiles = sortFilesByPriority(filterValidFiles(treeData.tree));
 
     const filteredTree: FileNode[] = validBlobFiles.slice(0, 50).map((item) => ({
       path: item.path,
