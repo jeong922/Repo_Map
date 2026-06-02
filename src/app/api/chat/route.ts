@@ -1,10 +1,9 @@
 import { isAllowedOrigin } from '@/lib/allowedOrigin';
-import { ai } from '@/lib/gemini';
 import { chatRateLimit } from '@/lib/rateLimit';
 import { generateAnalysis } from '@/lib/repoAnalysis';
 import { NextRequest, NextResponse } from 'next/server';
+import { getGeminiStream } from './geminiStream';
 import { createStreamMetrics } from './streamMetrics';
-import { logGeminiMetrics } from './geminiLogger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -40,73 +39,13 @@ export async function POST(req: NextRequest) {
 
     const metrics = createStreamMetrics();
 
-    const abortController = new AbortController();
-    const stream = new ReadableStream({
-      async start(controller) {
-        const encoder = new TextEncoder();
+    const signal = req.signal;
 
-        try {
-          const result = await ai.models.generateContentStream({
-            model: 'gemini-2.5-flash',
-            contents: userPrompt,
-            config: {
-              abortSignal: abortController.signal,
-            },
-          });
-
-          let finalUsage = null;
-
-          for await (const chunk of result) {
-            if (abortController.signal.aborted) {
-              break;
-            }
-
-            metrics.markFirstByte();
-
-            if (chunk.text) {
-              try {
-                controller.enqueue(encoder.encode(chunk.text));
-              } catch {
-                break;
-              }
-            }
-
-            if (chunk.usageMetadata) {
-              finalUsage = chunk.usageMetadata;
-            }
-          }
-
-          if (!abortController.signal.aborted) {
-            if (finalUsage) {
-              metrics.setTokens(finalUsage.promptTokenCount ?? 0, finalUsage.candidatesTokenCount ?? 0);
-            }
-
-            const { ttfb, generationTime, inputTokens, outputTokens } = metrics.finalize();
-
-            const totalTime = (performance.now() - promptStart) / 1000;
-
-            logGeminiMetrics({
-              ttfb,
-              generationTime,
-              totalTime,
-              inputTokens,
-              outputTokens,
-              promptDuration,
-            });
-
-            controller.close();
-          }
-        } catch (err) {
-          if (!abortController.signal.aborted) {
-            console.error('Stream Error:', err);
-            controller.error(err);
-          }
-        }
-      },
-      cancel(reason) {
-        console.warn('Stream cancelled:', reason);
-        abortController.abort();
-      },
+    const stream = await getGeminiStream(userPrompt, {
+      promptStart,
+      promptDuration,
+      metrics,
+      signal,
     });
 
     return new NextResponse(stream, {
