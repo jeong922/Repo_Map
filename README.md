@@ -622,24 +622,17 @@ AI 스트리밍 응답 생성 중 사용자가 페이지를 이탈하거나 브�
 
 #### 해결
 
-클라이언트의 연결 종료를 감지하여 서버 스트리밍을 즉시 중단할 수 있도록 `AbortController` 기반의 제어 구조를 도입하였다.
+Request Lifecycle과 스트림 중단 제어의 일관성을 위해 별도의 컨트롤러 생성 없이 Next.js의 req.signal을 스트림 하위 로직까지 직접 주입(Injection)하는 자동 중단 구조를 도입하였다.
 
 ```ts
-const abortController = new AbortController();
+const signal = req.signal;
 ```
 
 <br>
 
 **1️⃣ 클라이언트 이탈 감지 및 전파**
 
-ReadableStream의 `cancel()` 이벤트를 가로채 `abortController.abort()`를 호출함으로써, 서버 내부의 모든 비동기 프로세스에 중단 신호를 보낸다.
-
-```ts
-cancel(reason) {
-  console.warn('Stream cancelled:', reason);
-  abortController.abort();
-}
-```
+처음에는 별도의 AbortController를 생성하여 관리했으나, NextRequest가 제공하는 signal을 Gemini SDK와 비즈니스 로직에 직접 전달하도록 수정했다. 이를 통해 클라이언트의 연결 종료가 추가적인 중계 로직 없이 즉각적으로 서버 내부의 모든 비동기 프로세스에 전파된다.
 
 **2️⃣ 레이스 컨디션(Race Condition) 방어 및 조기 종료**
 
@@ -650,17 +643,15 @@ cancel(reason) {
 ```ts
 for await (const chunk of result) {
   // [1차 방어] 이미 취소되었다면 무거운 작업(인코딩 등)을 시작하지 않고 즉시 멈춤
-  if (abortController.signal.aborted) {
+  if (signal.aborted) {
     break;
   }
 
   if (chunk.text) {
     try {
-      // [2차 방어] 1차 검사를 통과했더라도, 전송 직전에 연결이 끊길 수 있음
-      // 이때 발생하는 'Controller is closed' 에러를 try-catch로 잡아 안전하게 종료
+      // [2차 방어] 전송 직전 연결이 끊길 경우 발생하는 에러를 catch하여 Graceful Exit
       controller.enqueue(encoder.encode(chunk.text));
     } catch {
-      // 에러가 나면 서버를 멈추는 대신 조용히 루프를 빠져나감 (Graceful Exit)
       break;
     }
   }
@@ -669,28 +660,26 @@ for await (const chunk of result) {
 
 비동기 환경에서는 상태 변화와 실행 사이의 시간 간격을 0으로 만드는 것은 구조적으로 불가능하다. 따라서 에러 발생 자체를 막으려 하기보다, 예외 처리를 이용해 어떤 타이밍에서도 안전하게 작업을 종료할 수 있는 방식을 선택했다.
 
-#### ⚠️ 기술적 고찰: AbortSignal 한계
+#### ⚠️ 기술적 고찰
 
-SDK 내부 명세(JSDoc)에 따르면 아래와 같은 주의사항이 명시되어 있다.
+Gemini SDK 명세에 따르면 AbortSignal은 요청 자체를 취소하지 않고, 서비스 레벨 inference는 계속 진행될 수 있다.
 
 > AbortSignal is a client-only operation. Using it to cancel an operation will not cancel the request in the service. You will still be charged usage for any applicable operations.
 
-결국은 AbortSignal를 사용해도 Gemini API 요청은 취소되지 않고, 사용량에 따른 비용이 청구될 수 있다.
+즉, 클라이언트 이탈 시에도 AI inference 비용은 발생할 수 있다.
 
-그럼에도 불구하고 AbortSignal을 도입한 이유는 서버 가용성 확보라는 실무적 이득이 더 크기 때문이다.
+그럼에도 AbortSignal을 도입한 이유는 서버 측 리소스 관리 때문이다.
 
-- AI 응답을 수신하고 가공(Encoding, 지표 계산 등)하는 서버 측의 CPU/메모리 점유를 즉시 해제
-
-- 응답 대상이 없는 '유령 작업'이 이벤트 루프를 점유하는 것을 막아 활성 사용자에게 더 많은 리소스를 할당
-
-- 비정상적인 스트림 쓰기 에러를 방지하여 깨끗한 서버 상태를 유지
+- 스트리밍 이후의 Encoding / Metrics 계산 등 불필요한 CPU 작업 중단
+- 클라이언트가 없는 상태에서의 이벤트 루프 점유 방지
+- 스트림 write 에러 및 invalid state 방지로 서버 안정성 확보
 
 ```ts
 const result = await ai.models.generateContentStream({
   model: 'gemini-2.5-flash',
   contents: userPrompt,
   config: {
-    abortSignal: abortController.signal,
+    abortSignal: signal,
   },
 });
 ```
