@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
         } catch (err) {
           console.error('Stream Error:', err);
 
-          controller.enqueue(encoder.encode('\n\nAI 서버가 현재 혼잡합니다. 잠시 후 다시 시도해주세요.'));
+          controller.error(err);
         } finally {
           if (!closed) {
             closed = true;

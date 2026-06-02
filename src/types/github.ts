@@ -3,6 +3,15 @@ export interface FileNode {
   type: 'blob' | 'tree';
 }
 
+export interface RawTreeItem {
+  path: string;
+  type: string;
+  sha: string;
+  mode?: string;
+  size?: number;
+  url?: string;
+}
+
 export interface SourceContext {
   path: string;
   content: string;

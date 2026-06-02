@@ -21,18 +21,25 @@ export const analyzeRepository = async (repoData: RepositoryData, onChunk: (text
   const decoder = new TextDecoder();
   let fullText = '';
 
-  while (true) {
-    const { done, value } = await reader.read();
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
 
-    if (done) {
-      break;
+      if (done) {
+        break;
+      }
+
+      const chunk = decoder.decode(value, {
+        stream: true,
+      });
+
+      fullText += chunk;
+
+      onChunk(chunk);
     }
 
-    const chunk = decoder.decode(value, { stream: true });
-    fullText += chunk;
-
-    onChunk(chunk);
+    return fullText;
+  } catch {
+    throw new ApiError('AI 서버가 현재 혼잡합니다. 잠시 후 다시 시도해주세요.', 503);
   }
-
-  return fullText;
 };
