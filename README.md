@@ -74,13 +74,6 @@ http://localhost:3000
 ### Testing
 
 ![Jest](https://img.shields.io/badge/Jest-v30-C21325?logo=jest)
-![Testing Library](https://img.shields.io/badge/Testing_Library-E33332?logo=testinglibrary)
-
-### Development Tools
-
-![ESLint](https://img.shields.io/badge/ESLint-v9-4B32C3?logo=eslint)
-![React Compiler](https://img.shields.io/badge/React_Compiler-Babel-FFCA28?logo=babel)
-![ts-node](https://img.shields.io/badge/ts--node-3178C6?logo=typescript)
 
 ## 📜 설계
 
