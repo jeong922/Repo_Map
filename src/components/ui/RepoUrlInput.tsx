@@ -37,7 +37,7 @@ export const RepoUrlInput = ({ onSearch }: Props) => {
             type='text'
             value={url}
             onChange={handleUrlChange}
-            placeholder='예) https://github.com/facebook/react'
+            placeholder='GitHub 저장소 URL을 입력하세요'
             className='w-full p-4 bg-transparent outline-none text-text-main placeholder:text-text-muted/50 text-sm'
           />
           <button
@@ -53,6 +53,9 @@ export const RepoUrlInput = ({ onSearch }: Props) => {
             />
           </button>
         </form>
+        <p className='mt-2 text-center text-xs text-text-muted'>
+          예) github.com/jeong922/Repo_Map 또는 https://github.com/jeong922/Repo_Map
+        </p>
         <div className='absolute -inset-px bg-linear-to-r from-brand/20 to-transparent rounded-2xl -z-10 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500' />
       </div>
     </div>
