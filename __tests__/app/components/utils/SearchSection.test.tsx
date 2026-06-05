@@ -22,24 +22,28 @@ describe('SearchSection', () => {
 
   it('올바른 URL이면 repository 페이지로 이동해야 한다', async () => {
     const user = userEvent.setup();
+
     (parseGitHubUrl as jest.Mock).mockReturnValue({
       success: true,
-      resultPath: 'facebook/react',
+      resultPath: 'jeong922/Repo_Map',
     });
 
     render(<SearchSection />);
 
-    const input = screen.getByPlaceholderText(/예\) https:\/\/github.com/i);
-    const button = screen.getByRole('button', { name: /analyze repository/i });
+    const input = screen.getByRole('textbox');
+    const button = screen.getByRole('button', {
+      name: /analyze repository/i,
+    });
 
-    await user.type(input, 'https://github.com/facebook/react');
+    await user.type(input, 'github.com/jeong922/Repo_Map');
     await user.click(button);
 
-    expect(mockPush).toHaveBeenCalledWith('/repository/facebook/react');
+    expect(mockPush).toHaveBeenCalledWith('/repository/jeong922/Repo_Map');
   });
 
   it('잘못된 URL이면 에러 메시지를 보여줘야 한다', async () => {
     const user = userEvent.setup();
+
     (parseGitHubUrl as jest.Mock).mockReturnValue({
       success: false,
       error: '잘못된 GitHub URL입니다.',
@@ -47,13 +51,16 @@ describe('SearchSection', () => {
 
     render(<SearchSection />);
 
-    const input = screen.getByPlaceholderText(/예\) https:\/\/github.com/i);
-    const button = screen.getByRole('button', { name: /analyze repository/i });
+    const input = screen.getByRole('textbox');
+    const button = screen.getByRole('button', {
+      name: /analyze repository/i,
+    });
 
     await user.type(input, 'invalid-url');
     await user.click(button);
 
     expect(await screen.findByText('잘못된 GitHub URL입니다.')).toBeInTheDocument();
+
     expect(mockPush).not.toHaveBeenCalled();
   });
 });
