@@ -1,6 +1,12 @@
 export const parseGitHubUrl = (url: string) => {
   try {
-    const urlObj = new URL(url);
+    let normalizedUrl = url.trim();
+
+    if (!/^https?:\/\//i.test(normalizedUrl)) {
+      normalizedUrl = `https://${normalizedUrl}`;
+    }
+
+    const urlObj = new URL(normalizedUrl);
     const host = urlObj.hostname.toLowerCase();
 
     if (host !== 'github.com' && host !== 'www.github.com') {

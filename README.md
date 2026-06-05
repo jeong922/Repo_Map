@@ -603,3 +603,92 @@ setStreamingText('');
 - React Query 기반 자동 재시도(429, 503) 적용
 - 재시도 시 분석 결과 중복 출력 방지
 - ErrorView 기반의 명확한 오류 안내 및 수동 재시도 제공
+
+좋아, 바로 붙여넣기 가능하게 **형식 정리 + 마크다운 안정화 + 코드 블록 정리**까지 해서 6번으로 만들어줄게.
+
+---
+
+### 6. AI 스트리밍 중단 처리 (Client Disconnect Handling)
+
+#### 문제
+
+AI 스트리밍 응답 생성 중 사용자가 페이지를 이탈하거나 브라우저 탭을 닫을 경우, 서버는 클라이언트와의 연결이 끊겼음을 즉각 인지하지 못하고 작업을 계속 수행하는 문제가 발생했다.
+
+- 자원 낭비: 응답을 받을 대상이 없는데도 서버는 계속해서 Gemini API 응답을 기다리고 가공함.
+- 서버 불안정: 이미 닫힌 스트림 컨트롤러에 데이터를 주입하려 할 때 `TypeError: Invalid state` 에러가 발생
+- 비용 발생: 불필요한 AI Inference가 지속되어 토큰 사용량이 누적
+
+특히 Next.js의 `ReadableStream` 구조는 클라이언트가 연결을 끊어도 내부 `start()` 함수가 자동으로 멈추지 않으므로, 명시적인 취소 메커니즘이 필수적이라고 판단했다.
+
+#### 해결
+
+Request Lifecycle과 스트림 중단 제어의 일관성을 위해 별도의 컨트롤러 생성 없이 Next.js의 req.signal을 스트림 하위 로직까지 직접 주입(Injection)하는 자동 중단 구조를 도입하였다.
+
+```ts
+const signal = req.signal;
+```
+
+<br>
+
+**1️⃣ 클라이언트 이탈 감지 및 전파**
+
+처음에는 별도의 AbortController를 생성하여 관리했으나, NextRequest가 제공하는 signal을 Gemini SDK와 비즈니스 로직에 직접 전달하도록 수정했다. 이를 통해 클라이언트의 연결 종료가 추가적인 중계 로직 없이 즉각적으로 서버 내부의 모든 비동기 프로세스에 전파된다.
+
+**2️⃣ 레이스 컨디션(Race Condition) 방어 및 조기 종료**
+
+> 레이스 컨디션(경쟁 상태, Race Condition)은 둘 이상의 프로세스나 스레드가 공유 자원에 동시에 접근할 때, 접근하는 타이밍이나 순서에 따라 실행 결과가 달라지는 현상을 의미한다.
+
+네트워크 연결 해제는 비동기적으로 발생하므로, 상태를 확인하는 시점과 데이터를 전송하는 시점 사이의 미세한 시간차로 인해 TOCTOU(Time-of-Check to Time-of-Use) 경합 상태가 발생할 수 있다. 이를 방어하기 위해 상태 기반 체크와 예외 기반 처리를 결합한 2중 가드를 구축하였다.
+
+```ts
+for await (const chunk of result) {
+  // [1차 방어] 이미 취소되었다면 무거운 작업(인코딩 등)을 시작하지 않고 즉시 멈춤
+  if (signal.aborted) {
+    break;
+  }
+
+  if (chunk.text) {
+    try {
+      // [2차 방어] 전송 직전 연결이 끊길 경우 발생하는 에러를 catch하여 Graceful Exit
+      controller.enqueue(encoder.encode(chunk.text));
+    } catch {
+      break;
+    }
+  }
+}
+```
+
+비동기 환경에서는 상태 변화와 실행 사이의 시간 간격을 0으로 만드는 것은 구조적으로 불가능하다. 따라서 에러 발생 자체를 막으려 하기보다, 예외 처리를 이용해 어떤 타이밍에서도 안전하게 작업을 종료할 수 있는 방식을 선택했다.
+
+#### ⚠️ 기술적 고찰
+
+Gemini SDK 명세에 따르면 AbortSignal은 요청 자체를 취소하지 않고, 서비스 레벨 inference는 계속 진행될 수 있다.
+
+> AbortSignal is a client-only operation. Using it to cancel an operation will not cancel the request in the service. You will still be charged usage for any applicable operations.
+
+즉, 클라이언트 이탈 시에도 AI inference 비용은 발생할 수 있다.
+
+그럼에도 AbortSignal을 도입한 이유는 서버 측 리소스 관리 때문이다.
+
+- 스트리밍 이후의 Encoding / Metrics 계산 등 불필요한 CPU 작업 중단
+- 클라이언트가 없는 상태에서의 이벤트 루프 점유 방지
+- 스트림 write 에러 및 invalid state 방지로 서버 안정성 확보
+
+```ts
+const result = await ai.models.generateContentStream({
+  model: 'gemini-2.5-flash',
+  contents: userPrompt,
+  config: {
+    abortSignal: signal,
+  },
+});
+```
+
+#### 결과
+
+- 클라이언트 부재 시 불필요한 서버 연산을 즉시 중단하여 시스템 효율 증대
+- `Controller is already closed` 에러를 원천 차단하여 서버 안정성 확보
+- AI 결과 수신 및 응답 전송 프로세스를 클라이언트 상태와 동기화
+- 중단된 요청을 지표 계산에서 제외하여 정확한 통계 데이터 확보
+
+---

@@ -1,8 +1,9 @@
 import { isAllowedOrigin } from '@/lib/allowedOrigin';
-import { ai } from '@/lib/gemini';
 import { chatRateLimit } from '@/lib/rateLimit';
 import { generateAnalysis } from '@/lib/repoAnalysis';
 import { NextRequest, NextResponse } from 'next/server';
+import { getGeminiStream } from './geminiStream';
+import { createStreamMetrics } from './streamMetrics';
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,77 +32,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'prompt 파라미터가 누락되었습니다.' }, { status: 400 });
     }
 
-    // --- [측정 시작] 프롬프트 생성 시간 측정 ---
     const promptStart = performance.now();
     const userPrompt = await generateAnalysis(body.prompt);
     const promptEnd = performance.now();
-    const promptDuration = ((promptEnd - promptStart) / 1000).toFixed(3);
+    const promptDuration = (promptEnd - promptStart) / 1000;
 
-    // --- [측정 시작] AI 응답 생성 시간 측정 시점 ---
-    const generateStart = performance.now();
-    let firstByteTime: number | null = null;
+    const metrics = createStreamMetrics();
 
-    const stream = new ReadableStream({
-      async start(controller) {
-        const encoder = new TextEncoder();
-        let inputTokens = 0;
-        let outputTokens = 0;
-        let closed = false;
+    const signal = req.signal;
 
-        try {
-          const result = await ai.models.generateContentStream({
-            model: 'gemini-2.5-flash',
-            contents: userPrompt,
-          });
-
-          for await (const chunk of result) {
-            // --- [측정] 첫 번째 데이터 조각이 도착한 시점(TTFB) 기록 ---
-            if (firstByteTime === null) {
-              firstByteTime = performance.now();
-            }
-
-            const text = chunk.text;
-            if (text) {
-              controller.enqueue(encoder.encode(text));
-            }
-
-            // --- [측정] 응답 메타데이터에서 실제 토큰 사용량 추출 ---
-            if (chunk.usageMetadata) {
-              outputTokens = chunk.usageMetadata.candidatesTokenCount ?? 0;
-              inputTokens = (chunk.usageMetadata.totalTokenCount ?? 0) - outputTokens;
-            }
-          }
-
-          const generateEnd = performance.now();
-
-          // 생성 요청부터 첫 글자가 출력되기까지 걸린 시간
-          const ttfb = firstByteTime ? ((firstByteTime - generateStart) / 1000).toFixed(2) : '0.00';
-          // 전체 생성 시간
-          const generationDuration = ((generateEnd - generateStart) / 1000).toFixed(2);
-          // 총 프로세스 시간
-          const totalDuration = ((generateEnd - promptStart) / 1000).toFixed(2);
-
-          console.log('\n[Gemini 스트리밍 성능 분석]');
-          console.log('------------------------------------');
-          console.log(`사용자 체감 대기 (TTFB) : ${ttfb}s`);
-          console.log(`전체 텍스트 생성 시간   : ${generationDuration}s`);
-          console.log(`총 프로세스 완료 시간   : ${totalDuration}s`);
-          console.log('------------------------------------');
-          console.log(`입력 토큰 수           : ${inputTokens}`);
-          console.log(`출력 토큰 (생성량)     : ${outputTokens}`);
-          console.log(`프롬프트 준비 시간     : ${promptDuration}s`);
-          console.log('====================================\n');
-        } catch (err) {
-          console.error('Stream Error:', err);
-
-          controller.error(err);
-        } finally {
-          if (!closed) {
-            closed = true;
-            controller.close();
-          }
-        }
-      },
+    const stream = await getGeminiStream(userPrompt, {
+      promptStart,
+      promptDuration,
+      metrics,
+      signal,
     });
 
     return new NextResponse(stream, {
