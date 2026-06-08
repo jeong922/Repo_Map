@@ -34,7 +34,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 npm run dev
 ```
 
-### 5. 브라우저 접속
+### 4. 브라우저 접속
 
 ```text
 http://localhost:3000
@@ -44,36 +44,37 @@ http://localhost:3000
 
 ### Frontend & Framework
 
-![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
-![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
+![Next.js](https://img.shields.io/badge/Next.js-black?logo=next.js)
+![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 
 ### Styling & UI
 
-![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-v4-06B6D4?logo=tailwindcss)
-![Tailwind Typography](https://img.shields.io/badge/Typography-Plugin-38BDF8?logo=tailwindcss)
-![Lucide React](https://img.shields.io/badge/Lucide-Icons-F56565?logo=lucide)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white)
+![Tailwind Typography](https://img.shields.io/badge/Tailwind_Typography-38BDF8?logo=tailwindcss&logoColor=white)
+![Lucide React](https://img.shields.io/badge/Lucide_Icons-F56565?logo=lucide&logoColor=white)
 
 ### Data & State Management
 
-![React Query](https://img.shields.io/badge/TanStack_Query-v5-FF4154?logo=reactquery)
-![Redis](https://img.shields.io/badge/Upstash_Redis-00E9A3?logo=redis)
-![Rate Limit](https://img.shields.io/badge/Upstash-Rate_Limit-00E9A3)
+![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?logo=reactquery&logoColor=white)
+![Upstash Redis](https://img.shields.io/badge/Upstash_Redis-00E9A3?logo=redis&logoColor=white)
+![Upstash Rate Limit](https://img.shields.io/badge/Upstash_Rate_Limit-00E9A3?logo=upstash&logoColor=white)
 
 ### AI & API
 
-![Google Gemini](https://img.shields.io/badge/Google_GenAI-Gemini-4285F4?logo=google)
-![Octokit](https://img.shields.io/badge/GitHub-Octokit-181717?logo=github)
+![Google Gemini](https://img.shields.io/badge/Google_Gemini-4285F4?logo=googlegemini&logoColor=white)
+![GitHub Octokit](https://img.shields.io/badge/GitHub_Octokit-181717?logo=github&logoColor=white)
 
 ### Markdown & Syntax Highlighting
 
-![React Markdown](https://img.shields.io/badge/React_Markdown-000000?logo=markdown)
-![Remark GFM](https://img.shields.io/badge/Remark-GFM-000000)
-![Syntax Highlighting](https://img.shields.io/badge/Syntax_Highlighter-Code-F7DF1E)
+![React Markdown](https://img.shields.io/badge/React_Markdown-000000?logo=markdown&logoColor=white)
+![Remark GFM](https://img.shields.io/badge/Remark_GFM-000000?logo=remark&logoColor=white)
+![Syntax Highlighter](https://img.shields.io/badge/Syntax_Highlighter-F7DF1E?logo=javascript&logoColor=black)
 
 ### Testing
 
-![Jest](https://img.shields.io/badge/Jest-v30-C21325?logo=jest)
+![Jest](https://img.shields.io/badge/Jest-C21325?logo=jest&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-2EAD33?logo=playwright&logoColor=white)
 
 ## 📜 설계
 
@@ -692,3 +693,72 @@ const result = await ai.models.generateContentStream({
 - 중단된 요청을 지표 계산에서 제외하여 정확한 통계 데이터 확보
 
 ---
+
+## 🧪 테스트
+
+프로젝트의 핵심 비즈니스 로직은 **Jest 기반 단위 테스트(Unit Test)** 로 검증하고, 사용자 주요 흐름은 **Playwright 기반 E2E 테스트**로 검증하였다.
+
+### Unit Test (Jest)
+
+다음 영역에 대한 단위 테스트를 작성하였다.
+
+- GitHub URL 파싱 및 검증 (`parseGitHubUrl`)
+- 허용 Origin 검증 (`allowedOrigin`)
+- Repository 분석 프롬프트 생성 (`repoAnalysis`)
+- 분석 대상 파일 필터링 (`filterValidFiles`)
+- 파일 우선순위 정렬 및 규칙 검증 (`sortFilesByPriority`, `extractionRules`)
+- 소스 코드 압축 및 전처리 (`minifyCode`)
+- Repository 조회 API Controller (`repositoryController`)
+- Repository 조회 API Service (`repoService`)
+- AI 분석 스트리밍 Service (`analysis`)
+- SearchSection 컴포넌트
+- RepositoryDetail 컴포넌트
+
+### E2E Test (Playwright)
+
+실제 브라우저 환경에서 주요 사용자 시나리오를 검증하였다.
+
+- 홈 페이지 렌더링
+- URL 입력 시 분석 버튼 활성화
+- 정상 URL 입력 시 Repository 페이지 이동
+- 잘못된 URL 입력 시 에러 메시지 표시
+- 잘못된 URL 입력 시 페이지 이동 방지
+
+---
+
+### 🛠️ 테스트 가능성을 고려한 Controller 분리 리팩토링
+
+#### 문제
+
+초기 구현에서는 API Route 내부에 요청 검증, Rate Limit, GitHub API 호출, 응답 생성 등 모든 비즈니스 로직이 포함되어 있었다.
+
+이 구조는 `NextRequest`, `NextResponse` 등 Next.js 런타임 객체에 강하게 의존하여 핵심 비즈니스 로직을 독립적으로 테스트하기 어려웠다. 또한 로직 검증을 위해 Route Handler 전체를 실행해야 하는 문제가 있었다.
+
+#### 해결
+
+비즈니스 로직을 Controller 계층으로 분리하고 Route는 HTTP 입출력만 담당하도록 역할을 축소하였다.
+
+```text
+Route
+  ↓
+Controller
+  ↓
+GitHub Service
+```
+
+Controller는 Next.js 구현체에 직접 의존하지 않고 단순한 Request 인터페이스와 데이터 객체만 사용하도록 설계하였다.
+
+이를 통해 Mock 객체만으로 Controller를 독립적으로 테스트할 수 있게 되었으며, 다음 시나리오를 검증하였다.
+
+- Rate Limit 초과 (429)
+- Origin 검증 실패 (403)
+- 필수 파라미터 누락 (400)
+- Repository 조회 성공 (200)
+- GitHub API 오류 (500)
+
+#### 결과
+
+- Next.js 런타임 없이 핵심 비즈니스 로직을 독립적으로 검증 가능
+- Route, Controller, Service의 역할을 명확하게 분리
+- 비즈니스 로직 변경 시 HTTP 계층과 독립적으로 수정 가능
+- 핵심 로직의 재사용성과 이식성 향상
