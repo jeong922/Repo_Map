@@ -33,3 +33,61 @@
     font-family: sans-serif;
   }
 }
+
+.markdown {
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.markdown h1 {
+  @apply mb-5 text-2xl font-bold;
+}
+
+.markdown h2 {
+  @apply mt-8 mb-4 text-xl font-semibold;
+}
+
+.markdown h3 {
+  @apply mt-6 mb-3 text-lg font-semibold;
+}
+
+.markdown p {
+  @apply my-4;
+}
+
+.markdown ul {
+  @apply my-4 list-disc pl-6;
+}
+
+.markdown ol {
+  @apply my-4 list-decimal pl-6;
+}
+
+.markdown li {
+  @apply my-1;
+}
+
+.markdown blockquote {
+  @apply my-4 border-l-4 border-gray-300 pl-4 text-gray-500;
+}
+
+.markdown pre {
+  @apply my-4 overflow-x-auto rounded-lg;
+}
+
+.markdown :not(pre) > code {
+  @apply rounded bg-gray-100 px-1.5 py-0.5 text-sm;
+}
+
+.markdown a {
+  @apply text-blue-600 underline;
+}
+
+.markdown table {
+  @apply my-5 w-full border-collapse text-sm;
+}
+
+.markdown th,
+.markdown td {
+  @apply border border-gray-200 p-3 text-left;
+}
