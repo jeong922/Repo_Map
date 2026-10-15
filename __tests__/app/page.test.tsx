@@ -12,10 +12,11 @@ describe('Home', () => {
     expect(screen.getByTestId('mock-search-section')).toBeInTheDocument();
   });
 
-  it('스타일 클래스가 적용되어 있어야 한다', () => {
-    const { container } = render(<Home />);
-    const mainDiv = container.firstChild as HTMLElement;
+  it('서비스 설명과 이용 단계를 표시해야 한다', () => {
+    render(<Home />);
 
-    expect(mainDiv).toHaveClass('flex-1', 'w-full', 'flex', 'flex-col', 'items-center', 'justify-center');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('프로젝트를 이해하세요.');
+    expect(screen.getByRole('heading', { name: '저장소 연결' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '인사이트 확인' })).toBeInTheDocument();
   });
 });

@@ -26,55 +26,53 @@ export const RepositoryDetail = ({ owner, repoName, branch }: Props) => {
     return <LoadingView message={`AI가 코드를 분석하여 인사이트를 도출하고 있습니다.\n잠시만 기다려주세요.`} />;
   }
 
+  if (!analysisData) {
+    return <LoadingView message='분석 결과를 준비하고 있습니다. 잠시만 기다려주세요.' />;
+  }
+
   return (
-    <div className='w-full min-h-screen bg-background'>
-      <div className='max-w-4xl mx-auto py-12 md:py-20 px-4 md:px-8'>
-        {analysisData && (
-          <article className='relative bg-surface border border-border-subtle rounded-4xl md:rounded-[3rem] shadow-2xl shadow-black/3 overflow-hidden transition-all duration-500 hover:shadow-black/6 animate-in fade-in slide-in-from-bottom-4'>
-            <header className='relative px-8 pt-16 pb-12 md:px-16 border-b border-border-subtle bg-linear-to-br from-white/40 via-transparent to-transparent dark:from-white/3'>
-              <div className='flex items-center gap-3 mb-8'>
-                <div className='flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20'>
-                  <div className={`w-1.5 h-1.5 rounded-full bg-accent ${isAnalyzing ? 'animate-pulse' : ''}`} />
-                  <span className='text-[10px] font-bold text-accent uppercase tracking-[0.2em]'>
-                    {isAnalyzing ? 'Gemini AI Analyzing...' : 'Gemini AI Insights'}
-                  </span>
-                </div>
-              </div>
-
-              <h1 className='text-2xl md:text-5xl font-bold tracking-tight text-text-main mb-6 bg-linear-to-r from-text-main to-text-main/60 bg-clip-text'>
-                Codebase Analysis
-              </h1>
-
-              <div className='inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-black/3 dark:bg-white/3 border border-border-subtle group transition-colors hover:border-accent/30 overflow-hidden max-w-full'>
-                <span className='text-sm font-medium text-text-muted truncate group-hover:text-accent transition-colors'>
-                  {owner} <span className='mx-1 opacity-30'>/</span> {repoName}
-                </span>
-                {branch && (
-                  <span className='shrink-0 px-1.5 py-0.5 rounded-md bg-accent/10 text-[10px] text-accent font-bold uppercase'>
-                    {branch}
-                  </span>
-                )}
-              </div>
-            </header>
-
-            <div className='px-8 py-12 md:px-16 md:py-16 overflow-hidden w-full wrap-break-word'>
-              <MarkdownRenderer content={analysisData} />
-
-              {isAnalyzing && <span className='inline-block w-1.5 h-5 ml-1 bg-accent/50 animate-pulse align-middle' />}
-            </div>
-
-            <footer className='px-8 py-8 border-t border-border-subtle bg-black/1 dark:bg-white/1 text-center'>
-              <p className='text-xs text-text-muted font-medium opacity-60 flex items-center justify-center gap-2'>
-                <span className='w-1 h-1 rounded-full bg-text-muted opacity-40' />
-                Powered by Google Gemini 2.5 Flash
-                <span className='mx-1 opacity-40'>|</span>
-                이 분석은 AI에 의해 생성되었으며 실제 코드 구조와 차이가 있을 수 있습니다.
-                <span className='w-1 h-1 rounded-full bg-text-muted opacity-40' />
-              </p>
-            </footer>
-          </article>
-        )}
-      </div>
+    <div className='w-full mx-auto max-w-5xl px-4 py-8 sm:px-8 sm:py-12'>
+      <article className='min-w-0 rounded-xl border border-border-subtle bg-surface'>
+        <header className='border-b border-border-subtle px-5 py-7 sm:px-10 sm:py-9'>
+          <div
+            role='status'
+            className='mb-5 inline-flex items-center gap-2 rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-text-muted'
+          >
+            <span
+              aria-hidden='true'
+              className={`h-1.5 w-1.5 rounded-full bg-accent ${isAnalyzing ? 'animate-pulse motion-reduce:animate-none' : ''}`}
+            />
+            {isAnalyzing ? 'Gemini AI Analyzing...' : 'Gemini AI Insights'}
+          </div>
+          <h1 className='text-2xl sm:text-3xl font-semibold tracking-tight'>Codebase Analysis</h1>
+          <div className='mt-3 flex flex-wrap items-center gap-2 text-sm text-text-muted'>
+            <span className='break-all'>
+              {owner} <span className='px-1'>/</span> {repoName}
+            </span>
+            {branch && (
+              <span className='max-w-full break-all rounded border border-border-subtle px-2 py-0.5 text-xs font-mono'>
+                {branch}
+              </span>
+            )}
+          </div>
+        </header>
+        <div className='min-w-0 px-5 py-7 sm:px-10 sm:py-10' aria-busy={isAnalyzing}>
+          <MarkdownRenderer content={analysisData} />
+          {isAnalyzing && (
+            <p className='mt-6 flex items-center gap-2 text-xs text-text-muted'>
+              <span
+                aria-hidden='true'
+                className='h-1.5 w-1.5 rounded-full bg-accent animate-pulse motion-reduce:animate-none'
+              />
+              분석 내용을 작성하고 있습니다…
+            </p>
+          )}
+        </div>
+        <footer className='border-t border-border-subtle px-5 py-5 sm:px-10 text-xs leading-relaxed text-text-muted'>
+          <p className='font-medium'>Powered by Google Gemini 2.5 Flash</p>
+          <p className='mt-1'>이 분석은 AI에 의해 생성되었으며 실제 코드 구조와 차이가 있을 수 있습니다.</p>
+        </footer>
+      </article>
     </div>
   );
 };

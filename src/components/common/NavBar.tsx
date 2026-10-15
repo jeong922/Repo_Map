@@ -3,11 +3,19 @@ import { ThemeToggle } from '../ui/ThemeToggle';
 
 export const NavBar = () => {
   return (
-    <nav className='w-full h-16 shrink-0 flex items-center justify-between px-6 border-b border-border-subtle bg-surface/80 backdrop-blur-md sticky top-0 left-0 z-100'>
-      <Link href='/'>
-        <span className='text-xl font-bold text-text-main tracking-tighter'>Repo Map</span>
-      </Link>
-      <ThemeToggle />
+    <nav aria-label='주 탐색' className='w-full shrink-0 border-b border-border-subtle bg-surface'>
+      <div className='mx-auto max-w-6xl h-16 flex items-center justify-between px-5 sm:px-8'>
+        <Link href='/' className='flex items-center gap-2.5 rounded-md'>
+          <span
+            aria-hidden='true'
+            className='flex h-7 w-7 items-center justify-center rounded-md bg-text-main text-surface text-sm font-mono font-semibold'
+          >
+            R
+          </span>
+          <span className='text-lg font-semibold text-text-main tracking-tight'>Repo Map</span>
+        </Link>
+        <ThemeToggle />
+      </div>
     </nav>
   );
 };
