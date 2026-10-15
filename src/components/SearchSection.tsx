@@ -22,13 +22,7 @@ export const SearchSection = () => {
 
   return (
     <>
-      <RepoUrlInput onSearch={handleSearch} />
-      {error && (
-        <div className='flex items-center gap-2 px-3 py-1 rounded-full bg-surface border border-border-subtle shadow-sm ...'>
-          <span className='w-1.5 h-1.5 rounded-full bg-red-400' />
-          <span className='text-xs font-medium text-text-muted'>{error}</span>
-        </div>
-      )}
+      <RepoUrlInput onSearch={handleSearch} error={error} />
     </>
   );
 };

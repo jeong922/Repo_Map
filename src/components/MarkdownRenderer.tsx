@@ -10,26 +10,10 @@ type CodeProps = ComponentPropsWithoutRef<'code'> & {
 };
 
 const MarkdownComponents: Components = {
-  hr: () => <hr className='my-12 border-0 h-px bg-border-subtle/80' />,
-  h3: ({ children }) => (
-    <h3 className='group text-2xl font-bold text-text-main mt-8 mb-8 flex items-center gap-4'>
-      <span className='h-8 w-1.5 bg-accent rounded-full scale-y-75 group-hover:scale-y-100 transition-transform duration-300' />
-      {children}
-    </h3>
-  ),
-  h4: ({ children }) => <h4 className='text-lg font-bold text-accent-dark mt-10 mb-4'>{children}</h4>,
-  p: ({ children }) => (
-    <p className='text-lg leading-[1.8] text-text-main/80 mb-2 font-light dark:font-normal break-all whitespace-normal'>
-      {children}
-    </p>
-  ),
-  li: ({ children }) => (
-    <li className='relative pl-8 mb-4 text-text-main/80 leading-relaxed list-none before:content-[""] before:absolute before:left-0 before:top-3 before:w-1.5 before:h-1.5 before:rounded-full before:bg-accent/40'>
-      {children}
-    </li>
-  ),
-  strong: ({ children }) => (
-    <strong className='font-bold text-text-main bg-accent-soft/50 px-1.5 py-0.5 rounded-md'>{children}</strong>
+  table: ({ children }) => (
+    <div className='report-table' role='region' aria-label='분석 결과 표' tabIndex={0}>
+      <table>{children}</table>
+    </div>
   ),
   code: ({ inline, className, children, ...props }: CodeProps) => {
     const match = /language-(\w+)/.exec(className || '');
@@ -82,8 +66,10 @@ const MarkdownComponents: Components = {
 
 export const MarkdownRenderer = ({ content }: { content: string }) => {
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} components={MarkdownComponents}>
-      {content}
-    </ReactMarkdown>
+    <div className='report-markdown'>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={MarkdownComponents}>
+        {content}
+      </ReactMarkdown>
+    </div>
   );
 };

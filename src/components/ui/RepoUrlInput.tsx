@@ -5,9 +5,10 @@ import { ArrowRight } from 'lucide-react';
 
 interface Props {
   onSearch: (url: string) => void;
+  error?: string;
 }
 
-export const RepoUrlInput = ({ onSearch }: Props) => {
+export const RepoUrlInput = ({ onSearch, error }: Props) => {
   const [url, setUrl] = useState('');
 
   const handleUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -26,26 +27,33 @@ export const RepoUrlInput = ({ onSearch }: Props) => {
   };
 
   return (
-    <div className='flex flex-col items-center w-full max-w-2xl gap-6'>
+    <div className='mx-auto flex flex-col w-full max-w-2xl gap-4 rounded-xl border border-border-subtle bg-surface p-5 sm:p-7'>
       <p className='text-text-muted font-medium tracking-tight'>분석을 원하는 GitHub 링크를 입력해 주세요.</p>
-      <div className='relative w-full group'>
-        <form
-          onSubmit={handleSubmit}
-          className='relative flex items-center bg-surface/50 backdrop-blur-xl rounded-2xl overflow-hidden border border-border-subtle shadow-2xl focus-within:border-brand/50 transition-all duration-300'
-        >
+      <div className='w-full'>
+        <form onSubmit={handleSubmit} className='flex flex-col gap-3 sm:flex-row sm:items-start'>
+          <label htmlFor='repository-url' className='sr-only'>
+            GitHub 저장소 URL
+          </label>
           <input
+            id='repository-url'
+            aria-invalid={!!error}
+            aria-describedby={error ? 'repository-url-help repository-url-error' : 'repository-url-help'}
+            autoCapitalize='none'
+            autoCorrect='off'
+            spellCheck={false}
             type='text'
             value={url}
             onChange={handleUrlChange}
             placeholder='GitHub 저장소 URL을 입력하세요'
-            className='w-full p-4 bg-transparent outline-none text-text-main placeholder:text-text-muted/50 text-sm'
+            className='min-w-0 flex-1 h-12 rounded-lg border border-border-subtle bg-background px-3 text-text-main placeholder:text-text-muted text-sm'
           />
           <button
             type='submit'
             disabled={!url.trim()}
             aria-label='Analyze repository'
-            className='cursor-pointer group/btn flex items-center justify-center px-5 h-14 bg-brand hover:bg-brand-hover transition-colors text-background'
+            className='button-primary h-12 shrink-0 gap-2'
           >
+            분석하기
             <ArrowRight
               aria-hidden='true'
               size={20}
@@ -53,10 +61,14 @@ export const RepoUrlInput = ({ onSearch }: Props) => {
             />
           </button>
         </form>
-        <p className='mt-2 text-center text-xs text-text-muted'>
+        <p id='repository-url-help' className='mt-3 text-xs leading-relaxed text-text-muted wrap-break-word'>
           예) github.com/jeong922/Repo_Map 또는 https://github.com/jeong922/Repo_Map
         </p>
-        <div className='absolute -inset-px bg-linear-to-r from-brand/20 to-transparent rounded-2xl -z-10 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500' />
+        {error && (
+          <p id='repository-url-error' role='alert' className='mt-3 text-sm text-danger'>
+            {error}
+          </p>
+        )}
       </div>
     </div>
   );

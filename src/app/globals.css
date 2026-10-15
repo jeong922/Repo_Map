@@ -1,93 +1,174 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-brand: #525252;
-  --color-background: #f0eee9;
+  --color-background: #f7f8fa;
   --color-surface: #ffffff;
   --color-text-main: #171717;
-  --color-text-muted: #737373;
-  --color-border-subtle: rgba(0, 0, 0, 0.05);
+  --color-text-muted: #626b78;
+  --color-border-subtle: #dce0e6;
   --color-accent: #3b82f6;
   --color-accent-soft: #eff6ff;
   --color-accent-dark: #2563eb;
+  --color-danger: #b42318;
 }
 
 @layer base {
   .dark {
     --color-brand: #d1d5c9;
-    --color-background: #0d0d0d;
-    --color-surface: #1a1c1e;
-    --color-text-main: #f0eee9;
+    --color-background: #111316;
+    --color-surface: #191c21;
+    --color-text-main: #edf0f4;
     --color-text-muted: #94a3b8;
-    --color-border-subtle: rgba(255, 255, 255, 0.1);
+    --color-border-subtle: #343a43;
     --color-accent: #60a5fa;
     --color-accent-soft: rgba(59, 130, 246, 0.1);
     --color-accent-dark: #93c5fd;
+    --color-danger: #fda29b;
+    color-scheme: dark;
   }
 
   body {
     background-color: var(--color-background);
     color: var(--color-text-main);
-    transition: all 0.3s ease;
     margin: 0;
-    font-family: sans-serif;
+    font-family: var(--font-geist-sans), Arial, sans-serif;
   }
 }
 
-.markdown {
-  line-height: 1.75;
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  :where(a, button, input, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-accent-dark);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  .button-primary,
+  .button-secondary {
+    @apply inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition-colors;
+  }
+  .button-primary {
+    @apply bg-text-main text-surface hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .button-secondary {
+    @apply border border-border-subtle bg-surface text-text-main hover:bg-background;
+  }
+}
+
+.report-markdown {
+  min-width: 0;
+}
+.report-markdown :where(h1, h2, h3, h4, h5, h6) {
+  color: var(--color-text-main);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  margin: 2rem 0 0.875rem;
+}
+.report-markdown > :first-child {
+  margin-top: 0;
+}
+.report-markdown h1 {
+  font-size: 1.75rem;
+}
+.report-markdown h2 {
+  font-size: 1.375rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.report-markdown h3 {
+  font-size: 1.125rem;
+}
+.report-markdown :where(h4, h5, h6) {
+  font-size: 1rem;
+}
+.report-markdown :where(p, li, blockquote, th, td) {
+  font-size: 0.9375rem;
+  line-height: 1.85;
   overflow-wrap: anywhere;
 }
-
-.markdown h1 {
-  @apply mb-5 text-2xl font-bold;
+.report-markdown p {
+  margin: 1rem 0;
+}
+.report-markdown :where(ul, ol) {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+.report-markdown ul {
+  list-style: disc;
+}
+.report-markdown ol {
+  list-style: decimal;
+}
+.report-markdown li {
+  padding-left: 0.25rem;
+  margin: 0.375rem 0;
+}
+.report-markdown li > p {
+  margin: 0.375rem 0;
+}
+.report-markdown li > :where(ul, ol) {
+  margin: 0.5rem 0;
+}
+.report-markdown strong {
+  font-weight: 600;
+}
+.report-markdown a {
+  color: var(--color-accent-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.report-markdown blockquote {
+  margin: 1.5rem 0;
+  padding: 0.125rem 1rem;
+  border-left: 3px solid var(--color-border-subtle);
+  color: var(--color-text-muted);
+}
+.report-markdown hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 1px solid var(--color-border-subtle);
+}
+.report-table {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 0.5rem;
+}
+.report-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.report-table :where(th, td) {
+  min-width: 8rem;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.report-table th {
+  background: var(--color-background);
+  font-weight: 600;
+}
+.report-table tr:last-child td {
+  border-bottom: 0;
+}
+.report-markdown input[type='checkbox'] {
+  accent-color: var(--color-accent-dark);
+  margin-right: 0.5rem;
 }
 
-.markdown h2 {
-  @apply mt-8 mb-4 text-xl font-semibold;
-}
-
-.markdown h3 {
-  @apply mt-6 mb-3 text-lg font-semibold;
-}
-
-.markdown p {
-  @apply my-4;
-}
-
-.markdown ul {
-  @apply my-4 list-disc pl-6;
-}
-
-.markdown ol {
-  @apply my-4 list-decimal pl-6;
-}
-
-.markdown li {
-  @apply my-1;
-}
-
-.markdown blockquote {
-  @apply my-4 border-l-4 border-gray-300 pl-4 text-gray-500;
-}
-
-.markdown pre {
-  @apply my-4 overflow-x-auto rounded-lg;
-}
-
-.markdown :not(pre) > code {
-  @apply rounded bg-gray-100 px-1.5 py-0.5 text-sm;
-}
-
-.markdown a {
-  @apply text-blue-600 underline;
-}
-
-.markdown table {
-  @apply my-5 w-full border-collapse text-sm;
-}
-
-.markdown th,
-.markdown td {
-  @apply border border-gray-200 p-3 text-left;
+@media (prefers-reduced-motion: reduce) {
+  .button-primary,
+  .button-secondary {
+    transition: none;
+  }
 }
