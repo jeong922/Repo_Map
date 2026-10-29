@@ -89,6 +89,33 @@ describe('analyzeRepository', () => {
     }
   });
 
+  it('부분 응답 이후 읽기에 실패하면 정상 청크만 전달하고 503 ApiError를 던져야 한다', async () => {
+    const partialText = '# 일부 분석 결과';
+    const errorMessage = 'AI 서버가 현재 혼잡합니다. 잠시 후 다시 시도해주세요.';
+    const read = jest
+      .fn()
+      .mockResolvedValueOnce({ done: false, value: new TextEncoder().encode(partialText) })
+      .mockRejectedValueOnce(new Error('stream interrupted'));
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      body: { getReader: () => ({ read }) },
+    });
+
+    const result = analyzeRepository(mockRepoData, mockOnChunk);
+
+    await expect(result).rejects.toBeInstanceOf(ApiError);
+    await expect(result).rejects.toMatchObject({ status: 503, message: errorMessage });
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(mockOnChunk).toHaveBeenCalledTimes(1);
+    expect(mockOnChunk).toHaveBeenCalledWith(partialText);
+
+    const receivedBody = mockOnChunk.mock.calls.map(([chunk]) => chunk).join('');
+    expect(receivedBody).toBe(partialText);
+    expect(receivedBody).not.toContain(errorMessage);
+    expect(receivedBody).not.toContain('stream interrupted');
+  });
+
   it('fetch 자체가 실패하면 원본 에러를 그대로 전달해야 한다', async () => {
     (global.fetch as jest.Mock).mockRejectedValue(new Error('Network Error'));
 
