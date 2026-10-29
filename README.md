@@ -601,11 +601,20 @@ setStreamingText('');
 
 - 오류 메시지가 Markdown 본문에 섞여 출력되는 문제 해결
 - 스트림 예외를 UI 에러 상태로 일관되게 처리
-- React Query 기반 자동 재시도(429, 503) 적용
-- 재시도 시 분석 결과 중복 출력 방지
+- 429 또는 503 오류 발생 시 1초 지연을 설정하여 최대 1회 자동 재시도
+- 재시도 요청 시작 시 이전 스트리밍 텍스트를 초기화하여 중복 누적 방지
 - ErrorView 기반의 명확한 오류 안내 및 수동 재시도 제공
 
-좋아, 바로 붙여넣기 가능하게 **형식 정리 + 마크다운 안정화 + 코드 블록 정리**까지 해서 6번으로 만들어줄게.
+#### 검증
+
+다음 테스트로 부분 응답 수신 후 오류 처리와 자동 재시도를 검증하였다.
+
+- `__tests__/services/analysis.test.ts`
+- `__tests__/hooks/useRepoAnalysis.test.tsx`
+
+테스트는 Jest/jsdom 환경에서 `fetch` 응답을 대체하고, 실제 클라이언트 서비스·훅·React Query를 사용하여 수행하였다. 비동기 흐름은 임의의 지연 대신 상태 변화를 기다리는 방식으로 검증하였다.
+
+서버의 `controller.error()`가 실제 HTTP 연결을 통해 브라우저의 스트림 읽기 실패로 전달되는 과정과 배포 프록시의 버퍼링 동작은 이번 테스트 범위에 포함하지 않았다.
 
 ---
 
@@ -710,7 +719,8 @@ const result = await ai.models.generateContentStream({
 - 소스 코드 압축 및 전처리 (`minifyCode`)
 - Repository 조회 API Controller (`repositoryController`)
 - Repository 조회 API Service (`repoService`)
-- AI 분석 스트리밍 Service (`analysis`)
+- AI 분석 스트리밍 및 부분 응답 후 오류 처리 (`analysis`)
+- AI 분석 자동 재시도 및 스트리밍 응답 초기화 (`useRepoAnalysis`)
 - SearchSection 컴포넌트
 - RepositoryDetail 컴포넌트
 
