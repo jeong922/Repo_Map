@@ -2,6 +2,8 @@
 
 GitHub API로 받은 저장소 데이터를 Gemini API를 이용해 분석하여 분석 결과를 보여주는 프로젝트
 
+### [Notion - 발생했던 문제들과 그것을 해결하는 과정이 일부 담겨있다.](https://app.notion.com/p/Repo-Map-40960e4ad07a80f7a9a6f1bd50231618?source=copy_link)
+
 ## 🚀 배포
 
 ### [Repo Map](https://repo-map-rose.vercel.app/)
