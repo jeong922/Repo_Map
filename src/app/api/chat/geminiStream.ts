@@ -24,16 +24,24 @@ interface StreamOptions {
 export async function getGeminiStream(userPrompt: string, options: StreamOptions) {
   const { promptStart, promptDuration, metrics, signal } = options;
 
+  const result = await streamGemini(userPrompt, signal);
+  const firstChunk = await result.next();
+
+  async function* chunks() {
+    if (!firstChunk.done) {
+      yield firstChunk.value;
+      yield* result;
+    }
+  }
+
   return new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
 
       try {
-        const result = await streamGemini(userPrompt, signal);
-
         let finalUsage = null;
 
-        for await (const chunk of result) {
+        for await (const chunk of chunks()) {
           if (signal.aborted) {
             break;
           }

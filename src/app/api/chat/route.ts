@@ -4,6 +4,7 @@ import { generateAnalysis } from '@/lib/repoAnalysis';
 import { NextRequest, NextResponse } from 'next/server';
 import { getGeminiStream } from './geminiStream';
 import { createStreamMetrics } from './streamMetrics';
+import { ApiError as GeminiApiError } from '@google/genai';
 
 export async function POST(req: NextRequest) {
   try {
@@ -58,6 +59,13 @@ export async function POST(req: NextRequest) {
     const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
 
     console.error('API Error:', errorMessage);
+
+    if (error instanceof GeminiApiError && [429, 503].includes(error.status)) {
+      return NextResponse.json(
+        { success: false, error: 'AI 서버가 현재 혼잡합니다. 잠시 후 다시 시도해주세요.' },
+        { status: error.status },
+      );
+    }
 
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
