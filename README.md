@@ -2,6 +2,8 @@
 
 GitHub API로 받은 저장소 데이터를 Gemini API를 이용해 분석하여 분석 결과를 보여주는 프로젝트
 
+### [Notion - 발생했던 문제들과 그것을 해결하는 과정이 일부 담겨있다.](https://app.notion.com/p/Repo-Map-40960e4ad07a80f7a9a6f1bd50231618?source=copy_link)
+
 ## 🚀 배포
 
 ### [Repo Map](https://repo-map-rose.vercel.app/)
@@ -597,6 +599,8 @@ catch {
 setStreamingText('');
 ```
 
+배포 환경에서는 Gemini 503 오류 이후 응답 전달이 실패하여 브라우저에 HTML 500이 반환되는 사례를 확인하였다. 이 경우 자동 재시도 대상에서 제외되므로, Gemini 연결과 첫 결과 수신을 HTTP 응답 반환 전에 수행하도록 변경하였다. 초기 Gemini 429·503은 동일한 HTTP 상태의 JSON 응답으로 반환하고, 미리 읽은 첫 청크는 이후 스트림에 포함한다. 첫 결과 수신 이후의 스트림 오류 처리는 기존 방식을 유지한다.
+
 #### 결과
 
 - 오류 메시지가 Markdown 본문에 섞여 출력되는 문제 해결
@@ -613,6 +617,10 @@ setStreamingText('');
 - `__tests__/hooks/useRepoAnalysis.test.tsx`
 
 테스트는 Jest/jsdom 환경에서 `fetch` 응답을 대체하고, 실제 클라이언트 서비스·훅·React Query를 사용하여 수행하였다. 비동기 흐름은 임의의 지연 대신 상태 변화를 기다리는 방식으로 검증하였다.
+
+추가로 `__tests__/app/api/chat.test.ts`에서 Gemini 연결 및 첫 읽기 오류의 HTTP 상태 보존, 첫 청크의 누락·중복 방지, 일반 예외의 500 처리 유지를 Jest Node 환경에서 검증하였다.
+
+배포 사이트의 정상 스트리밍 및 분석 완료는 확인하였으며, 실제 Gemini 503 발생 후 자동 재시도는 아직 확인하지 못하였다.
 
 서버의 `controller.error()`가 실제 HTTP 연결을 통해 브라우저의 스트림 읽기 실패로 전달되는 과정과 배포 프록시의 버퍼링 동작은 이번 테스트 범위에 포함하지 않았다.
 
@@ -721,6 +729,7 @@ const result = await ai.models.generateContentStream({
 - Repository 조회 API Service (`repoService`)
 - AI 분석 스트리밍 및 부분 응답 후 오류 처리 (`analysis`)
 - AI 분석 자동 재시도 및 스트리밍 응답 초기화 (`useRepoAnalysis`)
+- AI 분석 API 초기 오류 상태 보존 및 첫 청크 전달 (`POST /api/chat`)
 - SearchSection 컴포넌트
 - RepositoryDetail 컴포넌트
 
